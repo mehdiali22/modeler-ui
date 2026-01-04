@@ -1,0 +1,24 @@
+<div class="card" dir="rtl">
+  <div class="head">
+    <div class="title">Model Context</div>
+    <div class="sub">Project + Version</div>
+  </div>
+
+  <div class="current" *ngIf="current">
+    <div>پروژه: <b>{{ current.projectName }}</b></div>
+    <div>نسخه: <b>{{ current.versionName }}</b></div>
+  </div>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <label>نام پروژه</label>
+    <input class="inp" formControlName="projectName" />
+
+    <label>نام نسخه</label>
+    <input class="inp" formControlName="versionName" />
+
+    <div class="actions">
+      <button type="button" class="btn ghost" (click)="clear()">پاک کردن Context</button>
+      <button type="submit" class="btn primary">ذخیره و ادامه</button>
+    </div>
+  </form>
+</div>

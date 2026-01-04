@@ -1,0 +1,51 @@
+:host {
+  display: block;
+  height: 100vh;
+}
+
+.app {
+  height: 100vh;
+  background: #f5f6f8;
+  color: #111;
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+.topbar {
+  height: 52px;
+  background: #1f2228;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+
+.body {
+  height: calc(100vh - 52px);
+  display: flex;
+  flex-direction: row; /* در RTL همین کافیه */
+}
+
+.sidebar {
+  width: 240px;
+  background: #fff;
+  border-left: 1px solid #e6e8ee;
+  padding: 10px 8px;
+}
+
+.content {
+  flex: 1;
+  padding: 14px;
+}
+
+.content > * {
+  background: #fff;
+  border: 1px solid #e6e8ee;
+  border-radius: 12px;
+  min-height: calc(100vh - 52px - 28px);
+}

@@ -1,0 +1,9 @@
+<nav class="nav">
+  <a *ngFor="let item of items"
+     class="nav-item"
+     [routerLink]="item.route"
+     routerLinkActive="active">
+    <span class="nav-icon" *ngIf="item.icon">{{ item.icon }}</span>
+    <span class="nav-text">{{ item.label }}</span>
+  </a>
+</nav>

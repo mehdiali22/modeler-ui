@@ -1,0 +1,22 @@
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-right">
+      <span class="brand">{{ appTitle }}</span>
+    </div>
+
+    <div class="topbar-left">
+      <span class="user">👤</span>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- Sidebar سمت راست -->
+    <aside class="sidebar">
+      <app-sidebar [items]="navItems"></app-sidebar>
+    </aside>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
