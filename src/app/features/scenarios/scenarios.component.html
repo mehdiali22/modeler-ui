@@ -1,0 +1,187 @@
+<div class="page" dir="rtl">
+  <!-- Editor -->
+  <section class="card">
+    <div class="head">
+      <div class="title">Scenario Editor</div>
+      <div class="sub">V3 (temporary local store)</div>
+    </div>
+
+    <div class="form">
+      <label>ScenarioKey</label>
+      <input class="inp"
+             [value]="draft.scenarioKey"
+             (input)="draft.scenarioKey = $any($event.target).value"
+             placeholder="مثلا CASE_S_IncomeReview" />
+
+      <label>عنوان</label>
+      <input class="inp"
+             [value]="draft.titleFa"
+             (input)="draft.titleFa = $any($event.target).value" />
+
+      <label>Stage</label>
+      <select class="inp"
+              [value]="draft.stageId"
+              (change)="draft.stageId = $any($event.target).value">
+        <option value="">—</option>
+        <option *ngFor="let s of stages" [value]="s.id">
+          {{ s.stageKey }}{{ s.titleFa ? (' — ' + s.titleFa) : '' }}
+        </option>
+      </select>
+
+      <label>OwnerSubdomain</label>
+      <input class="inp"
+             [value]="draft.ownerSubdomain"
+             (input)="draft.ownerSubdomain = $any($event.target).value"
+             placeholder="مثلا Case / Settlement / Payment" />
+
+      <label>Trigger</label>
+      <input class="inp"
+             [value]="draft.trigger"
+             (input)="draft.trigger = $any($event.target).value"
+             placeholder="مثلا OnCaseLoaded یا OnIncomeAction" />
+
+      <label>توضیحات</label>
+      <textarea class="inp ta" rows="3"
+                [value]="draft.description"
+                (input)="draft.description = $any($event.target).value"></textarea>
+
+      <!-- Preconditions -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Preconditions (Conditions)</div>
+          <input class="inp small"
+                 [value]="condFilter"
+                 (input)="condFilter = $any($event.target).value"
+                 placeholder="جستجو Condition..." />
+        </div>
+
+        <div class="panel-list">
+          <div class="row" *ngFor="let c of filteredConditions">
+            <label class="item">
+              <input type="checkbox" [checked]="isCondSelected(c.id)" (change)="toggleCond(c.id)" />
+              <span class="key">{{ c.conditionKey }}</span>
+              <span class="muted">{{ c.titleFa || '' }}</span>
+            </label>
+          </div>
+          <div class="empty-mini" *ngIf="!filteredConditions.length">Conditionی پیدا نشد.</div>
+        </div>
+      </div>
+
+      <!-- Fact Changes -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Fact Changes (Set)</div>
+          <input class="inp small"
+                 [value]="factFilter"
+                 (input)="factFilter = $any($event.target).value"
+                 placeholder="جستجو Fact..." />
+        </div>
+
+        <div class="fc-add">
+          <select class="inp"
+                  [value]="fcDraft.factId"
+                  (change)="fcDraft.factId = $any($event.target).value">
+            <option *ngFor="let f of filteredFacts" [value]="f.id">{{ f.factKey }}</option>
+          </select>
+
+          <input class="inp"
+                 [value]="fcDraft.value"
+                 (input)="fcDraft.value = $any($event.target).value"
+                 placeholder="Value (string) مثلا Approved یا 2 یا true" />
+
+          <button class="btn ghost" type="button" (click)="addFactChange()">افزودن تغییر</button>
+        </div>
+
+        <div class="fc-list" *ngIf="draft.factChanges.length; else noFc">
+          <div class="fc-item" *ngFor="let fc of draft.factChanges">
+            <span class="key">{{ factKeyById(fc.factId) }}</span>
+            <span class="muted">SET</span>
+            <span class="val">{{ fc.value }}</span>
+            <button class="icon-btn danger" type="button" (click)="removeFactChange(fc.factId)">✖</button>
+          </div>
+        </div>
+        <ng-template #noFc>
+          <div class="empty-mini">هیچ FactChange ثبت نشده.</div>
+        </ng-template>
+      </div>
+
+      <!-- Produced Events -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Produced Events</div>
+        </div>
+
+        <div class="event-add">
+          <input class="inp"
+                 [value]="eventDraft"
+                 (input)="eventDraft = $any($event.target).value"
+                 placeholder="مثلا CaseApproved یا MonthlyPerformanceCreated" />
+          <button class="btn ghost" type="button" (click)="addEvent()">افزودن</button>
+        </div>
+
+        <div class="chips" *ngIf="draft.producedEvents.length; else noEv">
+          <span class="chip" *ngFor="let ev of draft.producedEvents">
+            {{ ev }}
+            <button class="chip-x" type="button" (click)="removeEvent(ev)">×</button>
+          </span>
+        </div>
+        <ng-template #noEv>
+          <div class="empty-mini">Eventی ثبت نشده.</div>
+        </ng-template>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn ghost" (click)="reset()">ریست</button>
+        <button type="button" class="btn primary" (click)="submit()">
+          {{ editingId ? 'ذخیره' : 'افزودن' }}
+        </button>
+      </div>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+    </div>
+  </section>
+
+  <!-- List -->
+  <section class="card">
+    <div class="head">
+      <div class="title">لیست سناریوها</div>
+    </div>
+
+    <div class="table-wrap" *ngIf="rows.length; else empty">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>ScenarioKey</th>
+            <th>Stage</th>
+            <th>Owner</th>
+            <th>Trigger</th>
+            <th>Pre</th>
+            <th>Changes</th>
+            <th>Events</th>
+            <th class="w-op">عملیات</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of rows">
+            <td><b>{{ r.scenarioKey }}</b></td>
+            <td class="muted">{{ r.stageId ? stageKeyById(r.stageId) : '—' }}</td>
+            <td class="muted">{{ r.ownerSubdomain || '—' }}</td>
+            <td class="muted">{{ r.trigger || '—' }}</td>
+            <td class="muted">{{ condCountText(r.preconditionIds) }}</td>
+            <td class="muted">{{ factChangeCountText(r.factChanges) }}</td>
+            <td class="muted">{{ eventCountText(r.producedEvents) }}</td>
+            <td class="ops">
+              <button class="icon-btn" type="button" (click)="edit(r)">✏️</button>
+              <button class="icon-btn danger" type="button" (click)="remove(r)">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #empty>
+      <div class="empty">رکوردی ثبت نشده است.</div>
+    </ng-template>
+  </section>
+</div>

@@ -39,6 +39,7 @@
   border: 1px solid #e6e8ee;
   border-radius: 10px;
   padding: 10px 12px;
+  width: 100%;
 }
 
 .ta {
@@ -70,6 +71,13 @@
   border-color: #e6e8ee;
 }
 
+.error {
+  grid-column: 1 / -1;
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 .table-wrap {
   overflow: auto;
 }
@@ -84,6 +92,7 @@
   padding: 10px 12px;
   border-bottom: 1px solid #eef0f5;
   text-align: right;
+  vertical-align: top;
 }
 
 .tbl thead th {
@@ -116,5 +125,9 @@
 .empty {
   padding: 16px;
   text-align: center;
+  color: #6b7280;
+}
+
+.muted {
   color: #6b7280;
 }

@@ -136,8 +136,8 @@
   color: #6b7280;
 }
 
-/* FactsUsed panel */
-.facts-panel {
+/* Panels */
+.panel {
   grid-column: 1 / -1;
   border: 1px solid #eef0f5;
   border-radius: 12px;
@@ -145,7 +145,7 @@
   background: #fafafa;
 }
 
-.facts-head {
+.panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -153,7 +153,7 @@
   margin-bottom: 10px;
 }
 
-.facts-title {
+.panel-title {
   font-weight: 700;
   font-size: 13px;
 }
@@ -163,7 +163,7 @@
   padding: 8px 10px;
 }
 
-.facts-list {
+.panel-list {
   max-height: 220px;
   overflow: auto;
   background: #fff;
@@ -171,11 +171,11 @@
   border-radius: 10px;
 }
 
-.fact-row {
+.row {
   border-bottom: 1px solid #f1f3f7;
 }
 
-.fact-item {
+.item {
   display: flex;
   gap: 10px;
   padding: 8px 10px;
@@ -183,17 +183,80 @@
   cursor: pointer;
 }
 
-.fact-key {
+.key {
   font-weight: 600;
-}
-
-.fact-meaning {
-  color: #6b7280;
-  font-size: 12px;
 }
 
 .empty-mini {
   padding: 10px;
   text-align: center;
   color: #6b7280;
+}
+
+/* Fact changes */
+.fc-add {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.fc-add .inp {
+  flex: 1;
+}
+
+.fc-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #eef0f5;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.fc-item .val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Events */
+.event-add {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.event-add .inp {
+  flex: 1;
+}
+
+.chips {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid #e6e8ee;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.chip-x {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
 }

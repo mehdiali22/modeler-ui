@@ -40,3 +40,48 @@ export type Condition = {
   failMessage?: string;
   factIdsUsed: Id[]; // FactsUsed
 };
+
+export type FactChange = {
+  factId: Id;
+  op: 'Set';
+  value: string; // فعلاً string نگه می‌داریم
+};
+
+
+
+export type Scenario = {
+  id: Id;
+  scenarioKey: string;
+
+  titleFa?: string;
+
+  stageId?: Id; // ✅ جدید: انتخاب از Stage Catalog
+  // stageKey?: string; // (اختیاری برای سازگاری قدیمی، اگر لازم داشتی)
+
+  ownerSubdomain?: string;
+  trigger?: string;
+  description?: string;
+
+  preconditionIds: Id[];
+  factChanges: FactChange[];
+  producedEvents: string[];
+};
+
+
+
+export type Process = {
+  id: Id;
+  processKey: string;
+  titleFa?: string;
+  description?: string;
+  order?: number;
+};
+
+export type Stage = {
+  id: Id;
+  processId: Id;
+  stageKey: string;
+  titleFa?: string;
+  description?: string;
+  order?: number;
+};

@@ -1,32 +1,32 @@
 <div class="page" dir="rtl">
   <section class="card">
     <div class="head">
-      <div class="title">Artifact Catalog</div>
+      <div class="title">Process Catalog</div>
       <div class="sub">Local (temporary)</div>
     </div>
 
     <div class="form">
-      <label>ArtifactKey</label>
+      <label>ProcessKey</label>
       <input class="inp"
-             [value]="draft.artifactKey"
-             (input)="draft.artifactKey = $any($event.target).value"
-             placeholder="مثلا Case یا KSR" />
+             [value]="draft.processKey"
+             (input)="draft.processKey = $any($event.target).value"
+             placeholder="مثلا RASA_MAIN" />
 
       <label>عنوان</label>
       <input class="inp"
              [value]="draft.titleFa"
              (input)="draft.titleFa = $any($event.target).value" />
 
+      <label>Order</label>
+      <input class="inp"
+             [value]="draft.order"
+             (input)="draft.order = $any($event.target).value"
+             placeholder="مثلا 10" />
+
       <label>توضیحات</label>
-      <textarea class="inp ta"
-                rows="3"
+      <textarea class="inp ta" rows="3"
                 [value]="draft.description"
                 (input)="draft.description = $any($event.target).value"></textarea>
-
-      <label>زیرمجموعه Case؟</label>
-      <input type="checkbox"
-             [checked]="draft.isChildOfCase"
-             (change)="draft.isChildOfCase = $any($event.target).checked" />
 
       <div class="actions">
         <button type="button" class="btn ghost" (click)="reset()">ریست</button>
@@ -40,27 +40,24 @@
   </section>
 
   <section class="card">
-    <div class="head">
-      <div class="title">لیست</div>
-    </div>
+    <div class="head"><div class="title">لیست</div></div>
 
     <div class="table-wrap" *ngIf="rows.length; else empty">
       <table class="tbl">
         <thead>
           <tr>
-            <th>ArtifactKey</th>
+            <th>ProcessKey</th>
             <th>عنوان</th>
-            <th>ChildOfCase</th>
+            <th>Order</th>
             <th>توضیحات</th>
             <th class="w-op">عملیات</th>
           </tr>
         </thead>
-
         <tbody>
           <tr *ngFor="let r of rows">
-            <td><b>{{ r.artifactKey }}</b></td>
+            <td><b>{{ r.processKey }}</b></td>
             <td class="muted">{{ r.titleFa || '—' }}</td>
-            <td class="muted">{{ r.isChildOfCase ? 'بله' : 'خیر' }}</td>
+            <td class="muted">{{ r.order ?? '—' }}</td>
             <td class="muted">{{ r.description || '—' }}</td>
             <td class="ops">
               <button class="icon-btn" type="button" (click)="edit(r)">✏️</button>

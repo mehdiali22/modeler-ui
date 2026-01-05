@@ -1,10 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Artifact, Fact, FactValueType, ModelContext } from '../../../core/types';
-import { ModelContextService } from '../../../core/model-context.service';
-import { VersionedStoreService } from '../../../core/versioned-store.service';
+import { Artifact, Fact, FactValueType } from '../../../core/types';
+import { CatalogStoreService } from '../../../core/catalog-store.service';
 
 const COL_FACTS = 'facts';
 const COL_ARTIFACTS = 'artifacts';
@@ -14,17 +11,22 @@ function uid()
   return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
 }
 
+type FactDraft = {
+  artifactId: string;
+  factKey: string;
+  valueType: FactValueType;
+  meaning: string;
+};
+
 @Component({
   selector: 'app-facts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule],
   templateUrl: './facts.component.html',
   styleUrls: ['./facts.component.scss'],
 })
 export class FactsComponent
 {
-  ctx!: ModelContext;
-
   artifacts: Artifact[] = [];
   rows: Fact[] = [];
   editingId: string | null = null;
@@ -39,120 +41,118 @@ export class FactsComponent
     { id: FactValueType.Month, title: 'Month' },
   ];
 
-  form!: ReturnType<FormBuilder['group']>;
+  draft: FactDraft = this.newDraft();
+  error: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private ctxService: ModelContextService,
-    private store: VersionedStoreService,
-    private router: Router
-  )
+  constructor(private store: CatalogStoreService)
   {
-    // ✅ form باید اینجا ساخته بشه
-    this.form = this.fb.group({
-      artifactId: ['', [Validators.required]],
-      factKey: ['', [Validators.required, Validators.maxLength(150)]],
-      valueType: [FactValueType.String, [Validators.required]],
-      meaning: ['', [Validators.maxLength(2000)]],
-    });
+    this.artifacts = this.store.list<Artifact>(COL_ARTIFACTS);
+    this.rows = this.store.list<Fact>(COL_FACTS);
 
-    const ctx = this.ctxService.current;
-    if (!ctx)
+    // default artifact
+    if (this.artifacts.length)
     {
-      queueMicrotask(() => this.router.navigateByUrl('/model'));
-      return;
-    }
-    this.ctx = ctx;
-
-    this.artifacts = this.store.list<Artifact>(this.ctx, COL_ARTIFACTS) ?? [];
-    this.rows = this.store.list<Fact>(this.ctx, COL_FACTS) ?? [];
-
-    // اگر هیچ artifact نداریم، صفحه Fact عملاً بی‌معنیه
-    if (this.artifacts.length && !this.form.value.artifactId)
-    {
-      this.form.patchValue({ artifactId: this.artifacts[0].id });
+      this.draft.artifactId = this.artifacts[0].id;
     }
   }
 
-  submit()
+  private newDraft(): FactDraft
   {
-    if (!this.ctx)
-    {
-      this.router.navigateByUrl('/model');
-      return;
-    }
-
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-
-    const v = this.form.value;
-
-    const payload: Omit<Fact, 'id'> = {
-      artifactId: (v.artifactId ?? '').toString(),
-      factKey: (v.factKey ?? '').trim(),
-      valueType: Number(v.valueType) as FactValueType,
-      meaning: (v.meaning ?? '').trim() || undefined,
+    return {
+      artifactId: '',
+      factKey: '',
+      valueType: FactValueType.String,
+      meaning: '',
     };
-
-    if (!payload.artifactId) return;
-    if (!payload.factKey) return;
-
-    // Unique FactKey per version
-    const dup = this.rows.find((x: Fact) =>
-      x.factKey.toLowerCase() === payload.factKey.toLowerCase() &&
-      x.id !== this.editingId
-    );
-    if (dup) return;
-
-    // Artifact must exist
-    if (!this.artifacts.some((a: Artifact) => a.id === payload.artifactId)) return;
-
-    if (this.editingId)
-    {
-      this.rows = this.rows.map((r: Fact) =>
-        r.id === this.editingId ? ({ ...r, ...payload }) : r
-      );
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
-    }
-
-    this.store.save(this.ctx, COL_FACTS, this.rows);
-    this.reset();
-  }
-
-  edit(r: Fact)
-  {
-    this.editingId = r.id;
-    this.form.setValue({
-      artifactId: r.artifactId,
-      factKey: r.factKey,
-      valueType: r.valueType,
-      meaning: r.meaning ?? '',
-    });
-  }
-
-  remove(r: Fact)
-  {
-    if (!this.ctx) return;
-    this.rows = this.rows.filter((x: Fact) => x.id !== r.id);
-    this.store.save(this.ctx, COL_FACTS, this.rows);
-    if (this.editingId === r.id) this.reset();
   }
 
   reset()
   {
     this.editingId = null;
-    this.form.reset({
-      artifactId: this.artifacts[0]?.id ?? '',
-      factKey: '',
-      valueType: FactValueType.String,
-      meaning: '',
-    });
+    this.error = null;
+    this.draft = this.newDraft();
+    if (this.artifacts.length) this.draft.artifactId = this.artifacts[0].id;
+  }
+
+  edit(r: Fact)
+  {
+    this.editingId = r.id;
+    this.error = null;
+    this.draft = {
+      artifactId: r.artifactId,
+      factKey: r.factKey,
+      valueType: r.valueType,
+      meaning: r.meaning ?? '',
+    };
+  }
+
+  remove(r: Fact)
+  {
+    this.rows = this.rows.filter(x => x.id !== r.id);
+    this.store.save(COL_FACTS, this.rows);
+    if (this.editingId === r.id) this.reset();
+  }
+
+  submit()
+  {
+    this.error = null;
+
+    const payload: Omit<Fact, 'id'> = {
+      artifactId: this.draft.artifactId,
+      factKey: (this.draft.factKey || '').trim(),
+      valueType: this.draft.valueType,
+      meaning: (this.draft.meaning || '').trim() || undefined,
+    };
+
+    if (!payload.artifactId)
+    {
+      this.error = 'Artifact را انتخاب کن.';
+      return;
+    }
+
+    if (!payload.factKey)
+    {
+      this.error = 'FactKey اجباری است.';
+      return;
+    }
+
+    // Artifact must exist
+    if (!this.artifacts.some(a => a.id === payload.artifactId))
+    {
+      this.error = 'Artifact انتخاب‌شده معتبر نیست.';
+      return;
+    }
+
+    // Unique FactKey (case-insensitive)
+    const dup = this.rows.find(x =>
+      x.factKey.toLowerCase() === payload.factKey.toLowerCase() &&
+      x.id !== this.editingId
+    );
+    if (dup)
+    {
+      this.error = 'FactKey تکراری است.';
+      return;
+    }
+
+    if (this.editingId)
+    {
+      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
+    } else
+    {
+      this.rows = [{ id: uid(), ...payload }, ...this.rows];
+    }
+
+    this.store.save(COL_FACTS, this.rows);
+    this.reset();
   }
 
   artifactTitle(artifactId: string): string
   {
-    const a = this.artifacts.find((x: Artifact) => x.id === artifactId);
-    return a?.artifactKey ?? '—';
+    return this.artifacts.find(a => a.id === artifactId)?.artifactKey ?? '—';
+  }
+
+  valueTypeTitle(vt: FactValueType): string
+  {
+    return this.valueTypes.find(x => x.id === vt)?.title ?? String(vt);
   }
 }

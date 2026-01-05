@@ -39,6 +39,7 @@
   border: 1px solid #e6e8ee;
   border-radius: 10px;
   padding: 10px 12px;
+  width: 100%;
 }
 
 .ta {
@@ -68,6 +69,13 @@
 .btn.ghost {
   background: #fff;
   border-color: #e6e8ee;
+}
+
+.error {
+  grid-column: 1 / -1;
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .table-wrap {

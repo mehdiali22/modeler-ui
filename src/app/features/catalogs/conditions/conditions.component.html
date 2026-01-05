@@ -5,25 +5,38 @@
       <div class="sub">Expression + FactsUsed</div>
     </div>
 
-    <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form">
       <label>ConditionKey</label>
-      <input class="inp" formControlName="conditionKey" placeholder="مثلا CASE_C_IncomeCanStartActivity" />
+      <input class="inp"
+             [value]="draft.conditionKey"
+             (input)="draft.conditionKey = $any($event.target).value"
+             placeholder="مثلا CASE_C_IncomeCanStartActivity" />
 
       <label>عنوان</label>
-      <input class="inp" formControlName="titleFa" />
+      <input class="inp"
+             [value]="draft.titleFa"
+             (input)="draft.titleFa = $any($event.target).value" />
 
       <label>Expression</label>
-      <textarea class="inp ta" rows="4" formControlName="expression"
-                placeholder='مثلا: Case.IncomeOwnershipState == "Free"'></textarea>
+      <textarea class="inp ta"
+                rows="4"
+                [value]="draft.expression"
+                (input)="draft.expression = $any($event.target).value"
+                placeholder='مثلا: Case.IncomeOwnershipState == "Free" && Case.Status == "Loaded"'></textarea>
 
       <label>FailMessage</label>
-      <input class="inp" formControlName="failMessage" />
+      <input class="inp"
+             [value]="draft.failMessage"
+             (input)="draft.failMessage = $any($event.target).value"
+             placeholder="پیام خطا" />
 
-      <!-- FactsUsed -->
       <div class="facts-panel">
         <div class="facts-head">
           <div class="facts-title">Facts Used</div>
-          <input class="inp small" [(ngModel)]="factFilter" name="factFilter" placeholder="جستجو Fact..." />
+          <input class="inp small"
+                 [value]="factFilter"
+                 (input)="factFilter = $any($event.target).value"
+                 placeholder="جستجو Fact..." />
         </div>
 
         <div class="facts-list">
@@ -41,9 +54,13 @@
 
       <div class="actions">
         <button type="button" class="btn ghost" (click)="reset()">ریست</button>
-        <button type="submit" class="btn primary">{{ editingId ? 'ذخیره' : 'افزودن' }}</button>
+        <button type="button" class="btn primary" (click)="submit()">
+          {{ editingId ? 'ذخیره' : 'افزودن' }}
+        </button>
       </div>
-    </form>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+    </div>
   </section>
 
   <section class="card">
@@ -62,6 +79,7 @@
             <th class="w-op">عملیات</th>
           </tr>
         </thead>
+
         <tbody>
           <tr *ngFor="let r of rows">
             <td><b>{{ r.conditionKey }}</b></td>
