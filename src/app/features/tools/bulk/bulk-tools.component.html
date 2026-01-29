@@ -1,0 +1,71 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Bulk Tools</div>
+  </div>
+
+  <div class="grid">
+    <!-- Normalize -->
+    <div class="card">
+      <div class="card-title">Normalize Model</div>
+
+      <div class="muted">
+        کارهایی مثل: trim کردن keyها، dedup لیست‌ها، پر کردن آرایه‌های null،
+        و استخراج factIdsUsed از expression.
+      </div>
+
+      <div class="row">
+        <button class="btn primary" (click)="normalizeAll()">Normalize</button>
+      </div>
+    </div>
+
+    <!-- Rename uiActionKey -->
+    <div class="card">
+      <div class="card-title">Rename uiActionKey (Decisions)</div>
+
+      <div class="row2">
+        <div>
+          <div class="lbl">Old uiActionKey</div>
+          <input class="inp mono" [value]="oldUiActionKey" (input)="oldUiActionKey = $any($event.target).value">
+        </div>
+
+        <div>
+          <div class="lbl">New uiActionKey</div>
+          <input class="inp mono" [value]="newUiActionKey" (input)="newUiActionKey = $any($event.target).value">
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" (click)="renameUiActionKey()">Rename</button>
+      </div>
+    </div>
+
+    <!-- Rename factKey -->
+    <div class="card">
+      <div class="card-title">Rename factKey + Replace in Condition.expression</div>
+
+      <div class="row2">
+        <div>
+          <div class="lbl">Old factKey</div>
+          <input class="inp mono" [value]="oldFactKey" (input)="oldFactKey = $any($event.target).value">
+        </div>
+
+        <div>
+          <div class="lbl">New factKey</div>
+          <input class="inp mono" [value]="newFactKey" (input)="newFactKey = $any($event.target).value">
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" (click)="renameFactKey()">Rename</button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card log">
+      <div class="card-title">Log</div>
+
+      <div class="mono line" *ngFor="let x of log">{{ x }}</div>
+      <div class="muted" *ngIf="!log.length">—</div>
+    </div>
+  </div>
+</div>

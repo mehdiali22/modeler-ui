@@ -1,0 +1,67 @@
+.page {
+  padding: 12px;
+}
+
+.head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.inp {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.btn {
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  padding: 7px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.btn.primary {
+  font-weight: 800;
+  border-color: rgba(0,0,0,.25);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.err {
+  color: #b00020;
+  font-weight: 700;
+}
+
+.meta {
+  opacity: .7;
+  margin-bottom: 8px;
+}

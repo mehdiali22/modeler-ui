@@ -1,0 +1,36 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Import / Export Model</div>
+
+    <div class="tools">
+      <select class="inp sm" [value]="mode" (change)="mode = $any($event.target).value">
+        <option value="merge">Merge (by id)</option>
+        <option value="overwrite">Overwrite</option>
+      </select>
+
+      <button class="btn" (click)="refreshTextFromStore()">Refresh</button>
+      <button class="btn" (click)="exportDownload()">Download JSON</button>
+
+      <label class="btn file">
+        Load File
+        <input type="file" accept=".json,application/json" (change)="onFilePicked($event)">
+      </label>
+
+      <button class="btn primary" (click)="importApply()">Import Apply</button>
+      <button class="btn danger" (click)="clearAll()">Clear All</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">JSON</div>
+      <textarea class="ta" [value]="text" (input)="text = $any($event.target).value"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Log</div>
+      <div class="mono line" *ngFor="let x of log">{{ x }}</div>
+      <div class="muted" *ngIf="!log.length">—</div>
+    </div>
+  </div>
+</div>

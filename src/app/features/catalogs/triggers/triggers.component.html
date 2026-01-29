@@ -1,0 +1,67 @@
+<div class="page" dir="rtl">
+  <section class="card">
+    <div class="head">
+      <div class="title">Trigger Catalog</div>
+      <div class="sub">Local (temporary)</div>
+    </div>
+
+    <div class="form">
+      <label>TriggerKey</label>
+      <input class="inp"
+             [value]="draft.triggerKey"
+             (input)="draft.triggerKey = $any($event.target).value"
+             placeholder="مثلا OnCaseLoaded" />
+
+      <label>عنوان</label>
+      <input class="inp"
+             [value]="draft.titleFa"
+             (input)="draft.titleFa = $any($event.target).value" />
+
+      <label>توضیحات</label>
+      <textarea class="inp ta" rows="3"
+                [value]="draft.description"
+                (input)="draft.description = $any($event.target).value"></textarea>
+
+      <div class="actions">
+        <button type="button" class="btn ghost" (click)="reset()">ریست</button>
+        <button type="button" class="btn primary" (click)="submit()">
+          {{ editingId ? 'ذخیره' : 'افزودن' }}
+        </button>
+      </div>
+
+      <div class="error" *ngIf="error">{{ error }}</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head"><div class="title">لیست</div></div>
+
+    <div class="table-wrap" *ngIf="rows.length; else empty">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>TriggerKey</th>
+            <th>عنوان</th>
+            <th>توضیحات</th>
+            <th class="w-op">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rows">
+            <td><b>{{ r.triggerKey }}</b></td>
+            <td class="muted">{{ r.titleFa || '—' }}</td>
+            <td class="muted">{{ r.description || '—' }}</td>
+            <td class="ops">
+              <button class="icon-btn" type="button" (click)="edit(r)">✏️</button>
+              <button class="icon-btn danger" type="button" (click)="remove(r)">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #empty>
+      <div class="empty">رکوردی ثبت نشده است.</div>
+    </ng-template>
+  </section>
+</div>

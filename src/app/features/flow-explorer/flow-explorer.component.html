@@ -1,0 +1,193 @@
+<div class="page" dir="rtl">
+  <section class="card">
+    <div class="head">
+      <div class="title">Flow Explorer</div>
+      <div class="sub">Trigger ⇄ Scenario ⇄ Event (with Event→Trigger links)</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="mode">
+        <button type="button" class="btn" [class.primary]="mode==='Trigger'" (click)="switchMode('Trigger')">
+          Trigger → Scenarios
+        </button>
+        <button type="button" class="btn" [class.primary]="mode==='Event'" (click)="switchMode('Event')">
+          Event → Producers
+        </button>
+      </div>
+
+      <input class="inp small"
+             [value]="scenarioFilter"
+             (input)="scenarioFilter = $any($event.target).value"
+             placeholder="فیلتر سناریو..." />
+    </div>
+
+    <!-- Trigger mode -->
+    <div class="panel" *ngIf="mode==='Trigger'">
+      <div class="row2">
+        <label class="lbl">Trigger</label>
+        <select class="inp" [value]="selectedTriggerId" (change)="selectedTriggerId = $any($event.target).value">
+          <option value="">—</option>
+          <option *ngFor="let t of triggers" [value]="t.id">
+            {{ t.triggerKey }}{{ t.titleFa ? (' — ' + t.titleFa) : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="empty" *ngIf="!selectedTriggerId">یک Trigger انتخاب کن.</div>
+
+      <div *ngIf="selectedTriggerId">
+        <div class="hint">
+          سناریوهایی که Triggerشان <b>{{ triggerKeyById(selectedTriggerId) }}</b> است:
+        </div>
+
+        <div class="list" *ngIf="scenariosBySelectedTrigger.length; else noSc1">
+          <div class="sc-card" *ngFor="let s of scenariosBySelectedTrigger">
+            <div class="sc-head">
+              <div class="sc-title">
+                <b>{{ s.scenarioKey }}</b>
+                <span class="muted" *ngIf="s.titleFa"> — {{ s.titleFa }}</span>
+              </div>
+
+              <div class="badges">
+                <span class="badge">{{ processKeyByStageId(s.stageId) }}</span>
+                <span class="badge">{{ stageKeyById(s.stageId) }}</span>
+                <span class="badge muted">Owner: {{ s.ownerSubdomain || '—' }}</span>
+              </div>
+            </div>
+
+            <div class="sc-meta">
+              <span class="chip">Pre: {{ statsScenario(s).pre }}</span>
+              <span class="chip">Actions: {{ statsScenario(s).act }}</span>
+              <span class="chip">FactChanges: {{ statsScenario(s).fc }}</span>
+              <span class="chip">Events: {{ statsScenario(s).ev }}</span>
+            </div>
+
+            <div class="events-block" *ngIf="(s.producedEventIds?.length ?? 0) > 0; else noEv1">
+              <div class="events-title">Produced Events</div>
+
+              <div class="ev-row" *ngFor="let eid of scenarioAllProducedEventIds(s)">
+                <div class="ev-left">
+                  <span class="key">{{ eventKeyById(eid) }}</span>
+                  <span class="muted small" *ngIf="scenarioEventSources(s, eid).length">
+                    ({{ scenarioEventSources(s, eid).join(' , ') }})
+                  </span>
+                  <span class="muted small">→ TriggerLink</span>
+                </div>
+
+                <select class="inp"
+                        [value]="getLinkedTriggerId(eid)"
+                        (change)="setEventTriggerLink(eid, $any($event.target).value)">
+                  <option value="">(بدون لینک)</option>
+                  <option *ngFor="let t of triggers" [value]="t.id">
+                    {{ t.triggerKey }}
+                  </option>
+                </select>
+
+                <div class="down">
+                  Downstream: {{ downstreamScenariosFromEvent(eid).length }}
+                </div>
+              </div>
+
+              <div class="downlist" *ngFor="let eid of s.producedEventIds">
+                <div class="down-title" *ngIf="downstreamScenariosFromEvent(eid).length">
+                  سناریوهای پایین‌دست برای {{ eventKeyById(eid) }}:
+                </div>
+
+                <ul class="mini" *ngIf="downstreamScenariosFromEvent(eid).length">
+                  <li *ngFor="let ds of downstreamScenariosFromEvent(eid)">
+                    <b>{{ ds.scenarioKey }}</b>
+                    <span class="muted"> ({{ stageKeyById(ds.stageId) }})</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <ng-template #noEv1>
+              <div class="empty-mini">این سناریو Event تولید نمی‌کند.</div>
+            </ng-template>
+          </div>
+        </div>
+
+        <ng-template #noSc1>
+          <div class="empty">سناریویی برای این Trigger ثبت نشده.</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Event mode -->
+    <div class="panel" *ngIf="mode==='Event'">
+      <div class="row2">
+        <label class="lbl">Event</label>
+        <select class="inp" [value]="selectedEventId" (change)="selectedEventId = $any($event.target).value">
+          <option value="">—</option>
+          <option *ngFor="let e of events" [value]="e.id">
+            {{ e.eventKey }}{{ e.titleFa ? (' — ' + e.titleFa) : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="empty" *ngIf="!selectedEventId">یک Event انتخاب کن.</div>
+
+      <div *ngIf="selectedEventId">
+        <div class="hint">
+          سناریوهایی که Event <b>{{ eventKeyById(selectedEventId) }}</b> را تولید می‌کنند:
+        </div>
+
+        <div class="linkline">
+          <div class="muted small">Event → TriggerLink:</div>
+          <select class="inp"
+                  [value]="getLinkedTriggerId(selectedEventId)"
+                  (change)="setEventTriggerLink(selectedEventId, $any($event.target).value)">
+            <option value="">(بدون لینک)</option>
+            <option *ngFor="let t of triggers" [value]="t.id">
+              {{ t.triggerKey }}
+            </option>
+          </select>
+
+          <div class="down">
+            Downstream: {{ downstreamScenariosFromEvent(selectedEventId).length }}
+          </div>
+        </div>
+
+        <div class="list" *ngIf="scenariosProducingSelectedEvent.length; else noSc2">
+          <div class="sc-card" *ngFor="let s of scenariosProducingSelectedEvent">
+            <div class="sc-head">
+              <div class="sc-title">
+                <b>{{ s.scenarioKey }}</b>
+                <span class="muted" *ngIf="s.titleFa"> — {{ s.titleFa }}</span>
+              </div>
+              <div class="badges">
+                <span class="badge">{{ processKeyByStageId(s.stageId) }}</span>
+                <span class="badge">{{ stageKeyById(s.stageId) }}</span>
+                <span class="badge muted">Trigger: {{ triggerKeyById(s.triggerId) }}</span>
+              </div>
+            </div>
+
+            <div class="sc-meta">
+              <span class="chip">Pre: {{ statsScenario(s).pre }}</span>
+              <span class="chip">Actions: {{ statsScenario(s).act }}</span>
+              <span class="chip">FactChanges: {{ statsScenario(s).fc }}</span>
+              <span class="chip" *ngIf="statsScenario(s).dec">Decisions: {{ statsScenario(s).dec }}</span>
+
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noSc2>
+          <div class="empty">هیچ سناریویی این Event را تولید نمی‌کند.</div>
+        </ng-template>
+
+        <div class="down-title" *ngIf="downstreamScenariosFromEvent(selectedEventId).length">
+          سناریوهای پایین‌دست (بعد از Link):
+        </div>
+        <ul class="mini" *ngIf="downstreamScenariosFromEvent(selectedEventId).length">
+          <li *ngFor="let ds of downstreamScenariosFromEvent(selectedEventId)">
+            <b>{{ ds.scenarioKey }}</b>
+            <span class="muted"> (Trigger: {{ triggerKeyById(ds.triggerId) }})</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </section>
+</div>

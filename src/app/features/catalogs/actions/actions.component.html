@@ -1,0 +1,99 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Action Catalog</div>
+    <div class="tools">
+      <input class="inp" placeholder="Search..." [value]="q" (input)="q = $any($event.target).value">
+      <button class="btn" (click)="reload()">Reload</button>
+      <button class="btn primary" (click)="add()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">List</div>
+
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>actionKey</th>
+            <th>title</th>
+            <th>executor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of filtered" [class.active]="r.id===editingId">
+            <td class="mono">{{ r.actionKey }}</td>
+            <td>{{ r.titleFa }}</td>
+            <td class="mono">{{ r.executorKind }}</td>
+            <td class="right">
+              <button class="btn sm" (click)="editRow(r.id)">Edit</button>
+              <button class="btn sm danger" (click)="remove(r.id)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="!filtered.length">
+            <td colspan="4" class="muted center">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" *ngIf="edit">
+      <div class="card-title">
+        Editor
+        <div class="tools">
+          <button class="btn sm" (click)="cancel()">Cancel</button>
+          <button class="btn sm primary" (click)="save()">Save</button>
+        </div>
+      </div>
+
+      <div class="form">
+        <div class="row2">
+          <div>
+            <div class="lbl">actionKey</div>
+            <input class="inp mono" [value]="edit.actionKey" (input)="edit.actionKey = $any($event.target).value">
+          </div>
+          <div>
+            <div class="lbl">titleFa</div>
+            <input class="inp" [value]="edit.titleFa" (input)="edit.titleFa = $any($event.target).value">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <div class="lbl">targetArtifact</div>
+            <app-smart-select [options]="artifactOptions"
+                              [value]="edit.targetArtifactId"
+                              (valueChange)="edit.targetArtifactId = $event">
+            </app-smart-select>
+          </div>
+
+          <div>
+            <div class="lbl">executorKind</div>
+            <select class="inp" [value]="edit.executorKind" (change)="edit.executorKind = $any($event.target).value">
+              <option value="System">System</option>
+              <option value="Human">Human</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row2" *ngIf="edit.executorKind==='Human'">
+          <div>
+            <div class="lbl">executorActor</div>
+            <app-smart-select [options]="actorOptions"
+                              [value]="edit.executorActorId || ''"
+                              (valueChange)="edit.executorActorId = $event">
+            </app-smart-select>
+          </div>
+          <div></div>
+        </div>
+
+        <div>
+          <div class="lbl">defaultParamsJson</div>
+          <textarea class="ta mono" [value]="edit.defaultParamsJson || ''"
+                    (input)="edit.defaultParamsJson = $any($event.target).value"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

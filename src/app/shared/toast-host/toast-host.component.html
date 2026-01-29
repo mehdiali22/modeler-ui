@@ -1,0 +1,11 @@
+<div class="wrap">
+  <div class="t"
+       *ngFor="let x of (toast.items$ | async)"
+       [class.info]="x.kind==='info'"
+       [class.success]="x.kind==='success'"
+       [class.warn]="x.kind==='warn'"
+       [class.error]="x.kind==='error'">
+    <div class="txt">{{ x.text }}</div>
+    <button class="x" (click)="toast.remove(x.id)">×</button>
+  </div>
+</div>

@@ -1,0 +1,22 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lbl {
+  font-weight: 800;
+  opacity: .9;
+}
+
+.inp, .sel {
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.disabled {
+  opacity: .6;
+  pointer-events: none;
+}

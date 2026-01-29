@@ -1,0 +1,56 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Flow View v2</div>
+
+    <div class="tools">
+      <select class="inp sm" [value]="stageFilter" (change)="stageFilter = $any($event.target).value; build()">
+        <option value="">All stages</option>
+        <option *ngFor="let s of stages" [value]="s.id">{{ s.stageKey }} — {{ s.titleFa }}</option>
+      </select>
+
+      <select class="inp sm" [value]="startTriggerId" (change)="startTriggerId = $any($event.target).value; build()">
+        <option *ngFor="let t of triggers" [value]="t.id">{{ t.triggerKey }} — {{ t.titleFa }}</option>
+      </select>
+
+      <input class="inp xs" type="number" min="2" max="40" [value]="depth"
+             (input)="depth = +$any($event.target).value; build()" title="depth">
+
+      <input class="inp xs" type="number" min="5" max="200" [value]="maxPaths"
+             (input)="maxPaths = +$any($event.target).value; build()" title="maxPaths">
+
+      <button class="btn" (click)="reload()">Reload</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Paths ({{ paths.length }})</div>
+
+    <div class="path" *ngFor="let p of paths; let pi = index">
+      <div class="path-title">#{{ pi + 1 }}</div>
+
+      <div class="steps">
+        <ng-container *ngFor="let s of p; let i = index">
+          <span class="sep" *ngIf="i>0">→</span>
+
+          <a *ngIf="s.node.open"
+             class="step"
+             [class.loop]="s.loop"
+             [routerLink]="['/tools/open']"
+             [queryParams]="s.node.open">
+            {{ s.node.title }}
+          </a>
+
+          <span *ngIf="!s.node.open"
+                class="step"
+                [class.loop]="s.loop">
+            {{ s.node.title }}
+          </span>
+        </ng-container>
+      </div>
+
+      <div class="muted" *ngIf="hasLoop(p)">Loop detected ⚠️</div>
+    </div>
+
+    <div class="muted center" *ngIf="!paths.length">—</div>
+  </div>
+</div>

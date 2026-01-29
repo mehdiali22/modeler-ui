@@ -1,0 +1,127 @@
+<div class="page" dir="rtl">
+  <section class="card">
+    <div class="head">
+      <div class="title">Stage Board</div>
+      <div class="sub">نمایش Stage → Scenarios (V3)</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="row">
+        <label class="lbl">Process</label>
+        <select class="inp"
+                [value]="selectedProcessId"
+                (change)="onProcessChanged($any($event.target).value)">
+          <option value="">—</option>
+          <option *ngFor="let p of processes" [value]="p.id">
+            {{ p.processKey }}{{ p.titleFa ? (' — ' + p.titleFa) : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label class="lbl">Stage</label>
+        <select class="inp"
+                [value]="selectedStageId"
+                (change)="selectedStageId = $any($event.target).value">
+          <option value="">—</option>
+          <option *ngFor="let st of stagesInSelectedProcess" [value]="st.id">
+            {{ st.stageKey }}{{ st.titleFa ? (' — ' + st.titleFa) : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="row2">
+        <input class="inp small"
+               [value]="stageFilter"
+               (input)="stageFilter = $any($event.target).value"
+               placeholder="فیلتر Stage..." />
+
+        <input class="inp small"
+               [value]="scenarioFilter"
+               (input)="scenarioFilter = $any($event.target).value"
+               placeholder="فیلتر Scenario..." />
+      </div>
+    </div>
+
+    <div class="summary" *ngIf="selectedStageId">
+      <div class="sum-title">
+        {{ processKeyById(selectedProcessId) }} /
+        {{ stageKeyById(selectedStageId) }}
+        <span class="muted">— {{ stageTitleById(selectedStageId) }}</span>
+      </div>
+
+      <div class="sum-badges">
+        <span class="chip">Total: {{ summaryStage().total }}</span>
+        <span class="chip warn">NoTrigger: {{ summaryStage().noTrigger }}</span>
+        <span class="chip warn">NoAction: {{ summaryStage().noAction }}</span>
+        <span class="chip warn">NoEvent: {{ summaryStage().noEvent }}</span>
+        <span class="pill" *ngIf="summaryStage().decisions">
+          Decisions: {{ summaryStage().decisions }}
+        </span>
+
+
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="!selectedStageId">
+      یک Stage انتخاب کن.
+    </div>
+
+    <div class="list" *ngIf="selectedStageId">
+      <div class="sc-card" *ngFor="let s of scenariosInSelectedStage">
+        <div class="sc-head">
+          <div class="sc-title">
+            <b>{{ s.scenarioKey }}</b>
+            <span class="muted" *ngIf="s.titleFa"> — {{ s.titleFa }}</span>
+          </div>
+
+          <div class="chips">
+            <span class="chip muted">Owner: {{ s.ownerSubdomain || '—' }}</span>
+            <span class="chip">Trigger: {{ triggerKeyById(s.triggerId) }}</span>
+          </div>
+        </div>
+
+        <div class="sc-meta">
+          <span class="pill">Pre: {{ statsScenario(s).pre }}</span>
+          <span class="pill">Actions: {{ statsScenario(s).act }}</span>
+          <span class="pill">FactChanges: {{ statsScenario(s).fc }}</span>
+          <span class="pill">Events: {{ statsScenario(s).ev }}</span>
+        </div>
+
+        <div class="warns" *ngIf="warningsScenario(s).length">
+          <span class="warn-badge" *ngFor="let w of warningsScenario(s)">{{ w }}</span>
+        </div>
+
+        <div class="evs" *ngIf="(s.producedEventIds?.length ?? 0) > 0; else noev">
+          <div class="ev-title">Produced Events</div>
+
+          <div class="ev-item" *ngFor="let eid of scenarioAllProducedEventIds(s)">
+
+            <span class="ev-key">{{ eventKeyById(eid) }}</span>
+
+            <span class="muted small" *ngIf="scenarioEventSources(s, eid).length">
+              ({{ scenarioEventSources(s, eid).join(' , ') }})
+            </span>
+
+            <span class="muted small" *ngIf="eventLinkedTriggerKey(eid)">
+              → Link: {{ eventLinkedTriggerKey(eid) }}
+            </span>
+            <span class="muted small" *ngIf="!eventLinkedTriggerKey(eid)">
+              → Link: —
+            </span>
+
+          </div>
+        </div>
+
+        <ng-template #noev>
+          <div class="empty-mini">Eventی تولید نمی‌کند.</div>
+        </ng-template>
+
+      </div>
+
+      <div class="empty" *ngIf="!scenariosInSelectedStage.length">
+        سناریویی برای این Stage ثبت نشده.
+      </div>
+    </div>
+  </section>
+</div>

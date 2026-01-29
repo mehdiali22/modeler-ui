@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "G:\\ModelerV3\\modeler-ui\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.scss||{181FE41B-5A5D-479F-9F8F-BF665F4EBC2A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\features\\help\\help.component.scss||{181FE41B-5A5D-479F-9F8F-BF665F4EBC2A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\features\\help\\help.component.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\features\\help\\help.component.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "help.component.scss",
+              "DocumentMoniker": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.scss",
+              "RelativeDocumentMoniker": "src\\app\\features\\help\\help.component.scss",
+              "ToolTip": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.scss",
+              "RelativeToolTip": "src\\app\\features\\help\\help.component.scss",
+              "ViewState": "AgIAAKAAAAAAAAAAAAAxwN8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002663|",
+              "WhenOpened": "2026-01-24T15:18:02.561Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "help.component.html",
+              "DocumentMoniker": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.html",
+              "RelativeDocumentMoniker": "src\\app\\features\\help\\help.component.html",
+              "ToolTip": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.html",
+              "RelativeToolTip": "src\\app\\features\\help\\help.component.html",
+              "ViewState": "AgIAACoAAAAAAAAAAAAxwGoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2026-01-24T15:17:55.463Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "help.component.ts",
+              "DocumentMoniker": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.ts",
+              "RelativeDocumentMoniker": "src\\app\\features\\help\\help.component.ts",
+              "ToolTip": "G:\\ModelerV3\\modeler-ui\\src\\app\\features\\help\\help.component.ts",
+              "RelativeToolTip": "src\\app\\features\\help\\help.component.ts",
+              "ViewState": "AgIAAJIAAAAAAAAAAAAmwNAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2026-01-24T15:17:17.813Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

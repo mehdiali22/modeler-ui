@@ -1,0 +1,58 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Model Validation</div>
+
+    <div class="tools">
+      <select class="inp" [value]="level" (change)="level = $any($event.target).value">
+        <option value="">همه</option>
+        <option value="error">Error</option>
+        <option value="warn">Warn</option>
+      </select>
+
+      <input class="inp"
+             placeholder="جستجو..."
+             [value]="q"
+             (input)="q = $any($event.target).value" />
+
+      <button class="btn" (click)="run()">Run</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Issues ({{ filtered.length }})</div>
+
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Scope</th>
+          <th>Ref</th>
+          <th>Message</th>
+          <th>Open</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let i of filtered" [class.err]="i.level==='error'" [class.warn]="i.level==='warn'">
+          <td class="mono">{{ i.level }}</td>
+          <td>{{ i.scope }}</td>
+          <td class="mono">{{ i.refKey }}</td>
+          <td>{{ i.message }}</td>
+
+          <td>
+            <a *ngIf="i.open"
+               class="btn sm"
+               [routerLink]="['/tools/open']"
+               [queryParams]="i.open">
+              باز کردن
+            </a>
+            <span *ngIf="!i.open" class="muted">—</span>
+          </td>
+        </tr>
+
+        <tr *ngIf="!filtered.length">
+          <td colspan="5" class="muted center">هیچ موردی پیدا نشد</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

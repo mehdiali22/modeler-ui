@@ -1,320 +1,260 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+
 import { CatalogStoreService } from '../../core/catalog-store.service';
-import { Condition, Fact, Scenario, FactChange } from '../../core/types';
-import { Process, Stage } from '../../core/types';
+import
+  {
+    ActionDefinition,
+    Condition,
+    EventDefinition,
+    Scenario,
+    Stage,
+    TriggerDefinition,
+  } from '../../core/types';
 
+import { SmartSelectComponent, SmartOption } from '../../shared/smart-select/smart-select.component';
+import { RefMultiSelectComponent, RefOption } from '../../shared/ref-multi-select/ref-multi-select.component';
 
-const COL_SCENARIOS = 'scenarios';
-const COL_CONDS = 'conditions';
-const COL_FACTS = 'facts';
-const COL_PROCESSES = 'processes';
 const COL_STAGES = 'stages';
+const COL_TRIGGERS = 'triggers';
+const COL_EVENTS = 'events';
+const COL_CONDS = 'conditions';
+const COL_ACTIONS = 'actions';
+const COL_SCENARIOS = 'scenarios';
 
 function uid()
 {
   return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
 }
 
-type ScenarioDraft = {
-  scenarioKey: string;
-  titleFa: string;
-  stageId: string;          // ✅
-  ownerSubdomain: string;
-  trigger: string;
-  description: string;
-
-  preconditionIds: string[];
-  factChanges: FactChange[];
-  producedEvents: string[];
-};
-
-type FactChangeDraft = {
-  factId: string;
-  value: string;
-};
+type DecisionAny = any;
 
 @Component({
   selector: 'app-scenarios',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SmartSelectComponent, RefMultiSelectComponent],
   templateUrl: './scenarios.component.html',
   styleUrls: ['./scenarios.component.scss'],
 })
 export class ScenariosComponent
 {
-  conditions: Condition[] = [];
-  facts: Fact[] = [];
-  rows: Scenario[] = [];
-  processes: Process[] = [];
   stages: Stage[] = [];
+  triggers: TriggerDefinition[] = [];
+  events: EventDefinition[] = [];
+  conditions: Condition[] = [];
+  actionsCatalog: ActionDefinition[] = [];
 
+  rows: Scenario[] = [];
 
   editingId: string | null = null;
-  error: string | null = null;
+  edit: Scenario | null = null;
 
-  // filters
-  condFilter = '';
-  factFilter = '';
+  // options for pickers
+  stageOptions: SmartOption[] = [];
+  triggerOptions: SmartOption[] = [];
+  condOptions: RefOption[] = [];
+  eventOptions: RefOption[] = [];
+  actionOptions: SmartOption[] = [];
 
-  // add factChange mini-form
-  fcDraft: FactChangeDraft = { factId: '', value: '' };
-
-  // add event mini-form
-  eventDraft = '';
-
-  draft: ScenarioDraft = this.newDraft();
+  uiActionKeys: string[] = []; // برای dropdown تصمیم‌ها
 
   constructor(private store: CatalogStoreService)
   {
-    // init in constructor ✅
-    this.conditions = this.store.list<Condition>(COL_CONDS);
-    this.facts = this.store.list<Fact>(COL_FACTS);
-    this.processes = this.store.list<Process>(COL_PROCESSES);
+    this.reload();
+  }
+
+  reload()
+  {
     this.stages = this.store.list<Stage>(COL_STAGES);
+    this.triggers = this.store.list<TriggerDefinition>(COL_TRIGGERS);
+    this.events = this.store.list<EventDefinition>(COL_EVENTS);
+    this.conditions = this.store.list<Condition>(COL_CONDS);
+    this.actionsCatalog = this.store.list<ActionDefinition>(COL_ACTIONS);
 
     this.rows = this.store.list<Scenario>(COL_SCENARIOS);
 
-    if (this.facts.length) this.fcDraft.factId = this.facts[0].id;
+    this.buildOptions();
+    this.buildUiActionKeys();
   }
 
-  private newDraft(): ScenarioDraft
+  private buildOptions()
   {
-    return {
-      scenarioKey: '',
-      titleFa: '',
-      stageId: this.stages[0]?.id ?? '',
-      ownerSubdomain: '',
-      trigger: '',
+    this.stageOptions = this.stages.map(s => ({ id: s.id, text: s.stageKey, sub: s.titleFa }));
+    this.triggerOptions = this.triggers.map(t => ({ id: t.id, text: t.triggerKey, sub: t.titleFa }));
+    this.condOptions = this.conditions.map(c => ({ id: c.id, text: c.conditionKey, sub: c.titleFa }));
+    this.eventOptions = this.events.map(e => ({ id: e.id, text: e.eventKey, sub: e.titleFa }));
+    this.actionOptions = this.actionsCatalog.map(a => ({ id: a.id, text: a.actionKey, sub: a.titleFa }));
+  }
+
+  private buildUiActionKeys()
+  {
+    const set = new Set<string>();
+
+    // از decisionهای قبلی جمع کن
+    for (const s of this.rows as any[])
+    {
+      const decs: any[] = s?.decisions ?? [];
+      for (const d of decs)
+      {
+        const k = (d?.uiActionKey ?? '').trim();
+        if (k) set.add(k);
+      }
+    }
+
+    // چند کلید پیشنهادی رایج (اختیاری)
+    ['IncomeApprove', 'IncomeReject', 'StartActivity', 'Close', 'Submit', 'Back'].forEach(x => set.add(x));
+
+    this.uiActionKeys = [...set].sort((a, b) => a.localeCompare(b));
+  }
+  //-----------------------------------
+  // Scenario-level produced events
+  get scenarioProducedEventIds(): string[]
+  {
+    return (this.edit as any)?.producedEventIds ?? [];
+  }
+  set scenarioProducedEventIds(v: string[])
+  {
+    if (!this.edit) return;
+    (this.edit as any).producedEventIds = v ?? [];
+  }
+
+  // Scenario-level preconditions (اگر لازم داری مشابهش)
+  get scenarioPreconditionIds(): string[]
+  {
+    return (this.edit as any)?.preconditionIds ?? [];
+  } 
+  
+
+  set scenarioPreconditionIds(v: string[])
+  {
+    if (!this.edit) return;
+    (this.edit as any).preconditionIds = v ?? [];
+  }
+
+  // ---------- CRUD scenario ----------
+  addScenario()
+  {
+    const s: Scenario = {
+      id: uid(),
+      scenarioKey: 'NEW_SCENARIO',
+      titleFa: 'سناریوی جدید',
       description: '',
+      stageId: this.stages[0]?.id ?? '',
+      ownerSubdomain: 'Case',
+      triggerId: this.triggers[0]?.id ?? '',
       preconditionIds: [],
+      actions: [],
       factChanges: [],
-      producedEvents: [],
+      producedEventIds: [],
+      decisions: [],
     };
+    this.rows = [s, ...this.rows];
+    this.store.save(COL_SCENARIOS, this.rows);
+    this.editRow(s.id);
   }
 
-
-  // -------- filters ----------
-  get filteredConditions(): Condition[]
+  editRow(id: string)
   {
-    const q = (this.condFilter || '').trim().toLowerCase();
-    if (!q) return this.conditions;
-    return this.conditions.filter(c =>
-      c.conditionKey.toLowerCase().includes(q) ||
-      (c.titleFa ?? '').toLowerCase().includes(q) ||
-      (c.expression ?? '').toLowerCase().includes(q)
-    );
-  }
+    this.editingId = id;
+    const src = this.rows.find(x => x.id === id);
+    this.edit = src ? structuredClone(src as any) : null;
 
-  get filteredFacts(): Fact[]
-  {
-    const q = (this.factFilter || '').trim().toLowerCase();
-    if (!q) return this.facts;
-    return this.facts.filter(f =>
-      f.factKey.toLowerCase().includes(q) ||
-      (f.meaning ?? '').toLowerCase().includes(q)
-    );
-  }
-
-  // -------- condition selection ----------
-  isCondSelected(condId: string): boolean
-  {
-    return this.draft.preconditionIds.includes(condId);
-  }
-
-  toggleCond(condId: string)
-  {
-    if (this.isCondSelected(condId))
+    // ensure defaults
+    if (this.edit)
     {
-      this.draft.preconditionIds = this.draft.preconditionIds.filter(x => x !== condId);
-    } else
-    {
-      this.draft.preconditionIds = [...this.draft.preconditionIds, condId];
+      (this.edit as any).preconditionIds ??= [];
+      (this.edit as any).actions ??= [];
+      (this.edit as any).factChanges ??= [];
+      (this.edit as any).producedEventIds ??= [];
+      (this.edit as any).decisions ??= [];
     }
   }
 
-  // -------- fact changes ----------
-  addFactChange()
-  {
-    this.error = null;
-
-    const factId = (this.fcDraft.factId || '').trim();
-    const value = (this.fcDraft.value || '').trim();
-
-    if (!factId)
-    {
-      this.error = 'Fact را انتخاب کن.';
-      return;
-    }
-    if (!this.facts.some(f => f.id === factId))
-    {
-      this.error = 'Fact انتخاب‌شده معتبر نیست.';
-      return;
-    }
-    if (!value)
-    {
-      this.error = 'Value برای FactChange اجباری است.';
-      return;
-    }
-
-    // unique by factId داخل سناریو (اگر وجود داشت overwrite)
-    const next = this.draft.factChanges.filter(fc => fc.factId !== factId);
-    next.unshift({ factId, op: 'Set', value });
-    this.draft.factChanges = next;
-
-    this.fcDraft.value = '';
-  }
-
-  removeFactChange(factId: string)
-  {
-    this.draft.factChanges = this.draft.factChanges.filter(fc => fc.factId !== factId);
-  }
-
-  factKeyById(factId: string): string
-  {
-    return this.facts.find(f => f.id === factId)?.factKey ?? '—';
-  }
-
-  // -------- produced events ----------
-  addEvent()
-  {
-    this.error = null;
-    const ev = (this.eventDraft || '').trim();
-    if (!ev) return;
-
-    // unique
-    const exists = this.draft.producedEvents.some(x => x.toLowerCase() === ev.toLowerCase());
-    if (!exists) this.draft.producedEvents = [ev, ...this.draft.producedEvents];
-
-    this.eventDraft = '';
-  }
-
-  removeEvent(ev: string)
-  {
-    this.draft.producedEvents = this.draft.producedEvents.filter(x => x !== ev);
-  }
-
-  // -------- CRUD ----------
-  reset()
+  cancelEdit()
   {
     this.editingId = null;
-    this.error = null;
-    this.condFilter = '';
-    this.factFilter = '';
-
-    this.draft = this.newDraft();
-    this.fcDraft = { factId: this.facts[0]?.id ?? '', value: '' };
-    this.eventDraft = '';
+    this.edit = null;
   }
 
-  edit(r: Scenario)
+  saveEdit()
   {
-    this.editingId = r.id;
-    this.error = null;
-    this.condFilter = '';
-    this.factFilter = '';
+    if (!this.edit) return;
 
-    this.draft = {
-      scenarioKey: r.scenarioKey,
-      titleFa: r.titleFa ?? '',
-      stageId: r.stageId ?? '',
-      ownerSubdomain: r.ownerSubdomain ?? '',
-      trigger: r.trigger ?? '',
-      description: r.description ?? '',
+    // minimal sanitize: keep ids arrays not null
+    (this.edit as any).preconditionIds ??= [];
+    (this.edit as any).actions ??= [];
+    (this.edit as any).factChanges ??= [];
+    (this.edit as any).producedEventIds ??= [];
+    (this.edit as any).decisions ??= [];
 
-      preconditionIds: [...(r.preconditionIds ?? [])],
-      factChanges: [...(r.factChanges ?? [])],
-      producedEvents: [...(r.producedEvents ?? [])],
+    const idx = this.rows.findIndex(x => x.id === this.edit!.id);
+    if (idx >= 0)
+    {
+      this.rows[idx] = this.edit!;
+      this.store.save(COL_SCENARIOS, this.rows);
+      this.buildUiActionKeys();
+    }
+  }
+
+  removeScenario(id: string)
+  {
+    this.rows = this.rows.filter(x => x.id !== id);
+    this.store.save(COL_SCENARIOS, this.rows);
+    if (this.editingId === id) this.cancelEdit();
+  }
+
+  // ---------- Decisions ----------
+  addDecision()
+  {
+    if (!this.edit) return;
+
+    const d: DecisionAny = {
+      id: uid(),
+      decisionKey: 'DECISION_NEW',
+      titleFa: '',
+      uiActionKey: '',
+      conditionIds: [],
+      actions: [],
+      factChanges: [],
+      producedEventIds: [],
     };
 
-    this.fcDraft = { factId: this.facts[0]?.id ?? '', value: '' };
-    this.eventDraft = '';
+    (this.edit as any).decisions = [d, ...((this.edit as any).decisions ?? [])];
   }
 
-  remove(r: Scenario)
+  removeDecision(decisionId: string)
   {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL_SCENARIOS, this.rows);
-    if (this.editingId === r.id) this.reset();
+    if (!this.edit) return;
+    (this.edit as any).decisions = ((this.edit as any).decisions ?? []).filter((x: any) => x.id !== decisionId);
   }
 
-  submit()
+  setDecisionUiActionKey(d: any, v: string)
   {
-    this.error = null;
-
-    const payload: Omit<Scenario, 'id'> = {
-      scenarioKey: (this.draft.scenarioKey || '').trim(),
-      titleFa: (this.draft.titleFa || '').trim() || undefined, 
-      stageId: (this.draft.stageId || '').trim() || undefined,
-      ownerSubdomain: (this.draft.ownerSubdomain || '').trim() || undefined,
-      trigger: (this.draft.trigger || '').trim() || undefined,
-      description: (this.draft.description || '').trim() || undefined,
-
-      preconditionIds: [...(this.draft.preconditionIds ?? [])],
-      factChanges: [...(this.draft.factChanges ?? [])],
-      producedEvents: [...(this.draft.producedEvents ?? [])],
-    };
-
-    if (!payload.scenarioKey)
+    d.uiActionKey = v;
+    if (v && !this.uiActionKeys.includes(v))
     {
-      this.error = 'ScenarioKey اجباری است.';
-      return;
+      this.uiActionKeys = [...this.uiActionKeys, v].sort((a, b) => a.localeCompare(b));
     }
-
-    // unique ScenarioKey
-    const dup = this.rows.find(x =>
-      x.scenarioKey.toLowerCase() === payload.scenarioKey.toLowerCase() &&
-      x.id !== this.editingId
-    );
-    if (dup)
-    {
-      this.error = 'ScenarioKey تکراری است.';
-      return;
-    }
-
-    // sanitize: only valid condition ids
-    payload.preconditionIds = payload.preconditionIds.filter(id => this.conditions.some(c => c.id === id));
-
-    // sanitize: only valid fact ids
-    payload.factChanges = payload.factChanges
-      .filter(fc => this.facts.some(f => f.id === fc.factId))
-      .map(fc => ({ ...fc, op: 'Set' as const, value: (fc.value ?? '').toString() }));
-
-    // sanitize events
-    payload.producedEvents = (payload.producedEvents ?? [])
-      .map(x => x.trim())
-      .filter(x => !!x);
-
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
-    }
-
-    this.store.save(COL_SCENARIOS, this.rows);
-    this.reset();
   }
 
-  // list helpers
-  condCountText(ids: string[]): string
+  // ---------- Decision actions ----------
+  addDecisionAction(d: any, actionId: string)
   {
-    return `${(ids?.length ?? 0)}`;
+    if (!actionId) return;
+    d.actions ??= [];
+    d.actions.push({ actionId, paramsJson: '' });
   }
 
-  factChangeCountText(changes: FactChange[]): string
+  removeDecisionAction(d: any, idx: number)
   {
-    return `${(changes?.length ?? 0)}`;
+    d.actions ??= [];
+    d.actions.splice(idx, 1);
   }
 
-  eventCountText(events: string[]): string
+  // labels
+  stageTitle(id: string)
   {
-    return `${(events?.length ?? 0)}`;
+    const s = this.stages.find(x => x.id === id);
+    return s ? `${s.stageKey} — ${s.titleFa}` : '—';
   }
-  stageKeyById(stageId: string): string
-  {
-    return this.stages.find(s => s.id === stageId)?.stageKey ?? '—';
-  }
-
 }

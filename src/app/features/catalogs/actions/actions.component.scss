@@ -6,6 +6,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
@@ -18,11 +19,12 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 1.1fr 1.6fr;
+  grid-template-columns: 1.1fr 1.4fr;
   gap: 12px;
 }
 
@@ -58,6 +60,23 @@ tr.active {
   background: rgba(0,0,0,.03);
 }
 
+.inp {
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: #fff;
+  min-width: 260px;
+}
+
+.ta {
+  width: 100%;
+  height: 140px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
 .btn {
   border: 1px solid rgba(0,0,0,.15);
   background: #fff;
@@ -77,32 +96,7 @@ tr.active {
 }
 
 .btn.danger {
-  border-color: rgba(180,0,0,.3);
-}
-
-.inp {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid rgba(0,0,0,.12);
-  border-radius: 10px;
-  background: #fff;
-}
-
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-.muted {
-  opacity: .65;
-}
-
-.center {
-  text-align: center;
-}
-
-.right {
-  white-space: nowrap;
-  text-align: left;
+  border-color: rgba(180,0,0,.35);
 }
 
 .form {
@@ -118,62 +112,19 @@ tr.active {
   align-items: start;
 }
 
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-.lbl {
-  font-weight: 900;
-  margin-bottom: 6px;
+.muted {
+  opacity: .7;
 }
 
-.lbl.big {
-  font-size: 16px;
+.center {
+  text-align: center;
 }
 
-.hr {
-  border: none;
-  border-top: 1px solid rgba(0,0,0,.08);
-  margin: 8px 0;
-}
-
-.dec-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.decision {
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: 12px;
-  padding: 10px;
-  background: #fff;
-}
-
-.dec-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.act-block {
-  margin-top: 10px;
-}
-
-.act {
-  display: grid;
-  grid-template-columns: 1fr 2fr auto;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.hint {
-  font-size: 12px;
-  margin-top: 6px;
+.right {
+  white-space: nowrap;
+  text-align: left;
 }

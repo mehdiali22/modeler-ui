@@ -1,0 +1,19 @@
+<div class="wrap" [class.disabled]="disabled">
+  <div class="lbl" *ngIf="label">{{ label }}</div>
+
+  <input class="inp"
+         [disabled]="disabled"
+         [placeholder]="'جستجو در لیست...'"
+         [value]="filter"
+         (input)="filter = $any($event.target).value" />
+
+  <select class="sel"
+          [disabled]="disabled"
+          [value]="value"
+          (change)="onPick($any($event.target).value)">
+    <option value="">{{ placeholder }}</option>
+    <option *ngFor="let o of filtered; trackBy: trackById" [value]="o.id">
+      {{ o.text }}{{ o.sub ? ' — ' + o.sub : '' }}
+    </option>
+  </select>
+</div>

@@ -1,0 +1,97 @@
+.page {
+  padding: 12px;
+}
+
+.head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.inp {
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: #fff;
+  min-width: 240px;
+}
+
+.btn {
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  padding: 7px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tbl th, .tbl td {
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  padding: 8px;
+  text-align: right;
+}
+
+.center {
+  text-align: center !important;
+}
+
+.muted {
+  opacity: .65;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+tr.missing {
+  background: rgba(0,0,0,.03);
+}
+
+.dup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+}

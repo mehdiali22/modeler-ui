@@ -19,6 +19,18 @@ export class AppComponent
     { label: 'Scenarios', route: '/scenarios', icon: '🎬' },
     { label: 'Processes', route: '/catalogs/processes', icon: '🧭' },
     { label: 'Stages', route: '/catalogs/stages', icon: '🧱' }, 
+    { label: 'Actions', route: '/catalogs/actions', icon: '🛠️' },
+    { label: 'Explorer', route: '/explorer', icon: '🧩' },
+    { label: 'Seed', route: '/seed', icon: '🌱' },
+    { label: 'Stage Board', route: '/stage-board', icon: '🧱' },
+    { label: 'Matrix', route: '/matrix', icon: '🧮' },
+    { label: 'UI Bindings', route: '/tools/ui-bindings', icon: '🔘' },
+    { label: 'Validation', route: '/tools/validation', icon: '✅' },
+    { label: 'Flow', route: '/flow', icon: '🧭' },
+    { label: 'Search', route: '/tools/search', icon: '🔎' },
+    { label: 'Import/Export', route: '/tools/io', icon: '📦' },
+    { label: 'Flow v2', route: '/flow-v2', icon: '🧭' },
+    { label: 'Help', route: '/help', icon: '❓' },
 
 
   ];

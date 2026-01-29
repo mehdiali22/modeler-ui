@@ -1,0 +1,30 @@
+<div class="wrap" [class.disabled]="disabled">
+  <div class="lbl" *ngIf="label">{{ label }}</div>
+
+  <div class="row">
+    <input class="inp"
+           [disabled]="disabled"
+           placeholder="جستجو..."
+           [value]="filter"
+           (input)="filter = $any($event.target).value" />
+
+    <select class="sel"
+            [disabled]="disabled"
+            [value]="pendingId"
+            (change)="pendingId = $any($event.target).value">
+      <option value="">{{ placeholder }}</option>
+      <option *ngFor="let o of filtered" [value]="o.id">
+        {{ o.text }}{{ o.sub ? ' — ' + o.sub : '' }}
+      </option>
+    </select>
+
+    <button class="btn" [disabled]="disabled || !pendingId" (click)="add()">Add</button>
+  </div>
+
+  <div class="chips" *ngIf="selectedIds.length">
+    <div class="chip" *ngFor="let id of selectedIds">
+      <span class="mono">{{ getSelectedLabel(id) }}</span>
+      <button class="x" [disabled]="disabled" (click)="remove(id)">×</button>
+    </div>
+  </div>
+</div>
