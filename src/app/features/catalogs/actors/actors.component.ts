@@ -1,14 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
 import { ActorDefinition, ExecutorKind } from '../../../core/types';
-
-const COL = 'actors';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
+import { ActorApiService } from '../../../core/api/actor-api.service';
 
 type ActorDraft = {
   actorKey: string;
@@ -24,10 +17,10 @@ type ActorDraft = {
   templateUrl: './actors.component.html',
   styleUrls: ['./actors.component.scss'],
 })
-export class ActorsComponent
+export class ActorsComponent implements OnInit
 {
   rows: ActorDefinition[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
   error: string | null = null;
 
   kinds: { id: ExecutorKind; title: string }[] = [
@@ -37,12 +30,22 @@ export class ActorsComponent
 
   draft: ActorDraft = this.newDraft();
 
-  constructor(private store: CatalogStoreService)
+  constructor(private api: ActorApiService) {}
+
+  ngOnInit(): void
   {
-    this.rows = this.store.list<ActorDefinition>(COL);
+    this.load();
   }
 
-  private newDraft(): ActorDraft
+  load()
+  {
+    this.error = null;
+    this.api.list().subscribe({
+      next: rows => { this.rows = rows ?? []; },
+      error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); }
+    });
+  }
+private newDraft(): ActorDraft
   {
     return { actorKey: '', titleFa: '', kind: 'Human', description: '' };
   }
@@ -68,9 +71,14 @@ export class ActorsComponent
 
   remove(r: ActorDefinition)
   {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL, this.rows);
-    if (this.editingId === r.id) this.reset();
+    this.error = null;
+    this.api.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter(x => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: err => { this.error = (err?.message ?? 'خطا در حذف'); }
+    });
   }
 
   submit()
@@ -93,15 +101,25 @@ export class ActorsComponent
       description: (this.draft.description || '').trim() || undefined,
     };
 
-    if (this.editingId)
+    if (this.editingId !== null)
     {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
+      const id = this.editingId;
+      this.api.update(id, payload).subscribe({
+        next: updated => {
+          this.rows = this.rows.map(r => r.id === id ? updated : r);
+          this.reset();
+        },
+        error: err => { this.error = (err?.message ?? 'خطا در ویرایش'); }
+      });
     } else
     {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
+      this.api.create(payload).subscribe({
+        next: created => {
+          this.rows = [created, ...this.rows];
+          this.reset();
+        },
+        error: err => { this.error = (err?.message ?? 'خطا در ایجاد'); }
+      });
     }
-
-    this.store.save(COL, this.rows);
-    this.reset();
   }
 }

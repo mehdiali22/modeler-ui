@@ -1,14 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
+
 import { EventDefinition } from '../../../core/types';
-
-const COL = 'events';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
+import { EventApiService } from '../../../core/api/event-api.service';
 
 type EventDraft = {
   eventKey: string;
@@ -23,33 +17,42 @@ type EventDraft = {
   templateUrl: './events.component.html',
   styleUrls: ['./events.component.scss'],
 })
-export class EventsComponent
-{
+export class EventsComponent implements OnInit {
   rows: EventDefinition[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
   error: string | null = null;
 
   draft: EventDraft = this.newDraft();
 
-  constructor(private store: CatalogStoreService)
-  {
-    this.rows = this.store.list<EventDefinition>(COL);
+  constructor(private api: EventApiService) {}
+
+  ngOnInit(): void {
+    this.load();
   }
 
-  private newDraft(): EventDraft
-  {
+  load() {
+    this.error = null;
+    this.api.list().subscribe({
+      next: (rows) => {
+        this.rows = rows ?? [];
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
+  }
+
+  private newDraft(): EventDraft {
     return { eventKey: '', titleFa: '', description: '' };
   }
 
-  reset()
-  {
+  reset() {
     this.editingId = null;
     this.error = null;
     this.draft = this.newDraft();
   }
 
-  edit(r: EventDefinition)
-  {
+  edit(r: EventDefinition) {
     this.editingId = r.id;
     this.error = null;
     this.draft = {
@@ -59,25 +62,35 @@ export class EventsComponent
     };
   }
 
-  remove(r: EventDefinition)
-  {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL, this.rows);
-    if (this.editingId === r.id) this.reset();
+  remove(r: EventDefinition) {
+    this.error = null;
+    this.api.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter((x) => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در حذف';
+      },
+    });
   }
 
-  submit()
-  {
+  submit() {
     this.error = null;
 
     const eventKey = (this.draft.eventKey || '').trim();
-    if (!eventKey) { this.error = 'EventKey اجباری است.'; return; }
+    if (!eventKey) {
+      this.error = 'EventKey اجباری است.';
+      return;
+    }
 
-    const dup = this.rows.find(x =>
-      x.eventKey.toLowerCase() === eventKey.toLowerCase() &&
-      x.id !== this.editingId
+    const dup = this.rows.find(
+      (x) => x.eventKey.toLowerCase() === eventKey.toLowerCase() && x.id !== this.editingId,
     );
-    if (dup) { this.error = 'EventKey تکراری است.'; return; }
+    if (dup) {
+      this.error = 'EventKey تکراری است.';
+      return;
+    }
 
     const payload: Omit<EventDefinition, 'id'> = {
       eventKey,
@@ -85,15 +98,27 @@ export class EventsComponent
       description: (this.draft.description || '').trim() || undefined,
     };
 
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
+    if (this.editingId !== null) {
+      const id = this.editingId;
+      this.api.update(id, payload).subscribe({
+        next: (updated) => {
+          this.rows = this.rows.map((r) => (r.id === id ? updated : r));
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ویرایش';
+        },
+      });
+    } else {
+      this.api.create(payload).subscribe({
+        next: (created) => {
+          this.rows = [created, ...this.rows];
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ایجاد';
+        },
+      });
     }
-
-    this.store.save(COL, this.rows);
-    this.reset();
   }
 }

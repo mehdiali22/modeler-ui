@@ -9,8 +9,8 @@
       <label>Artifact</label>
       <select class="inp"
               [value]="draft.artifactId"
-              (change)="draft.artifactId = $any($event.target).value">
-        <option value="" disabled>انتخاب...</option>
+              (change)="draft.artifactId = +$any($event.target).value">
+        <option value="0" disabled>انتخاب...</option>
         <option *ngFor="let a of artifacts" [value]="a.id">
           {{ a.artifactKey }}{{ a.titleFa ? (' — ' + a.titleFa) : '' }}
         </option>
@@ -38,7 +38,7 @@
       <div class="actions">
         <button type="button" class="btn ghost" (click)="reset()">ریست</button>
         <button type="button" class="btn primary" (click)="submit()">
-          {{ editingId ? 'ذخیره' : 'افزودن' }}
+          {{ editingId !== null ? 'ذخیره' : 'افزودن' }}
         </button>
       </div>
 

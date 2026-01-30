@@ -1,4 +1,4 @@
-export type Id = string;
+export type Id = number;
 
 export type ModelContext = {
   projectName: string;
@@ -128,44 +128,44 @@ export type ScenarioDecision = {
 };
 
 export type ScenarioActionRef = {
-  actionId: string;
+  actionId: Id;
   paramsJson?: string;
 };
 
 export type FactChange = {
-  factId: string;
+  factId: Id;
   op: 'Set' | 'Unset' | 'Inc' | 'Dec';
   value?: string;
 };
 
 export type Decision = {
-  id: string;
+  id: Id;
   decisionKey: string;
   titleFa?: string;
   uiActionKey?: string;     // ✅ همون binding به دکمه UI
-  conditionIds: string[];
+  conditionIds: Id[];
   actions: ScenarioActionRef[];
   factChanges: FactChange[];
-  producedEventIds: string[];
+  producedEventIds: Id[];
 };
 
 export type Scenario = {
-  id: string;
+  id: Id;
   scenarioKey: string;
   titleFa?: string;
   description?: string;
 
-  stageId: string;
+  stageId: Id;
   ownerSubdomain?: string;
 
-  triggerId?: string;
+  triggerId?: Id;
 
-  preconditionIds: string[];
+  preconditionIds: Id[];
 
   // legacy (اگر داری نگه دار)
   actions: ScenarioActionRef[];
   factChanges: FactChange[];
-  producedEventIds: string[];
+  producedEventIds: Id[];
 
   // ✅ V3
   decisions?: Decision[];

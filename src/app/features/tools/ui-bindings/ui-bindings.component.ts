@@ -1,29 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
-import
-  {
-    Scenario,
-    Stage,
-    TriggerDefinition,
-    EventDefinition,
-} from '../../../core/types';
+import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
+import { EventApiService } from '../../../core/api/event-api.service';
+import { ScenarioApiService } from '../../../core/api/scenario-api.service';
+import { StageApiService } from '../../../core/api/stage-api.service';
+import { TriggerApiService } from '../../../core/api/trigger-api.service';
 
-
-const COL_SCENARIOS = 'scenarios';
-const COL_STAGES = 'stages';
-const COL_TRIGGERS = 'triggers';
-const COL_EVENTS = 'events';
+import { EventDefinition, Scenario, Stage, TriggerDefinition } from '../../../core/types';
 
 type DecisionRow = {
   uiActionKey: string;          // BTN_APPROVE ...
-  scenarioId: string;
+  scenarioId: number;
   scenarioKey: string;
-  decisionId: string;
+  decisionId: number;
   decisionKey: string;
-  stageId: string;
+  stageId: number;
   stageKey: string;
   triggerKey: string;
   actionsCount: number;
@@ -39,7 +32,9 @@ type DecisionRow = {
   styleUrls: ['./ui-bindings.component.scss'],
 })
 export class UiBindingsComponent
+  implements OnInit
 {
+  error: string | null = null;
   rows: DecisionRow[] = [];
 
   stages: Stage[] = [];
@@ -48,59 +43,82 @@ export class UiBindingsComponent
   events: EventDefinition[] = [];
 
   q = '';
-  stageId = '';
+  stageId: number | null = null;
 
-  constructor(private store: CatalogStoreService)
-  {
+  constructor(
+    private stagesApi: StageApiService,
+    private scenariosApi: ScenarioApiService,
+    private triggersApi: TriggerApiService,
+    private eventsApi: EventApiService,
+  ) {}
+
+  ngOnInit(): void {
     this.reload();
   }
 
-  reload()
-  {
-    this.stages = this.store.list<Stage>(COL_STAGES);
-    this.scenarios = this.store.list<Scenario>(COL_SCENARIOS);
-    this.triggers = this.store.list<TriggerDefinition>(COL_TRIGGERS);
-    this.events = this.store.list<EventDefinition>(COL_EVENTS);
+  reload() {
+    this.error = null;
 
-    const stageById = new Map(this.stages.map(s => [s.id, s]));
-    const triggerById = new Map(this.triggers.map(t => [t.id, t]));
-    const eventKeyById = new Map(this.events.map(e => [e.id, e.eventKey]));
+    forkJoin({
+      stages: this.stagesApi.list(),
+      scenarios: this.scenariosApi.list(),
+      triggers: this.triggersApi.list(),
+      events: this.eventsApi.list(),
+    }).subscribe({
+      next: (res: {
+        stages?: Stage[];
+        scenarios?: Scenario[];
+        triggers?: TriggerDefinition[];
+        events?: EventDefinition[];
+      }) => {
+        this.stages = res.stages ?? [];
+        this.scenarios = res.scenarios ?? [];
+        this.triggers = res.triggers ?? [];
+        this.events = res.events ?? [];
 
-    const out: DecisionRow[] = [];
-    for (const s of this.scenarios)
-    {
-      const st = stageById.get(s.stageId ?? '—');
-      const tr = triggerById.get(s.triggerId ?? '');
+        const stageById = new Map<number, Stage>(this.stages.map((s) => [s.id, s]));
+        const triggerById = new Map<number, TriggerDefinition>(this.triggers.map((t) => [t.id, t]));
+        const eventKeyById = new Map<number, string>(this.events.map((e) => [e.id, e.eventKey]));
 
-      for (const d of (s.decisions ?? []))
-      {
-        const ui = (d.uiActionKey ?? '').trim();
+        const out: DecisionRow[] = [];
+        for (const s of this.scenarios) {
+          const stageId = (s.stageId ?? 0) as number;
+          const st = stageById.get(stageId);
+          const tr = s.triggerId != null ? triggerById.get(s.triggerId) : undefined;
 
-        out.push({
-          uiActionKey: ui || '—',
-          scenarioId: s.id,
-          scenarioKey: s.scenarioKey,
-          decisionId: d.id,
-          decisionKey: d.decisionKey,
-          stageId: s.stageId ?? '—',
-          stageKey: st?.stageKey ?? '—',
-          triggerKey: tr?.triggerKey ?? '—',
-          actionsCount: (d.actions?.length ?? 0),
-          conditionsCount: (d.conditionIds?.length ?? 0),
-          events: (d.producedEventIds ?? []).map(id => eventKeyById.get(id) ?? '—'),
-        });
-      }
-    }
+          for (const d of (s.decisions ?? [])) {
+            const ui = (d.uiActionKey ?? '').trim();
 
-    // مرتب‌سازی: اول uiActionKey بعد stage بعد scenario
-    out.sort((a, b) =>
-      a.uiActionKey.localeCompare(b.uiActionKey) ||
-      a.stageKey.localeCompare(b.stageKey) ||
-      a.scenarioKey.localeCompare(b.scenarioKey) ||
-      a.decisionKey.localeCompare(b.decisionKey)
-    );
+            out.push({
+              uiActionKey: ui || '—',
+              scenarioId: s.id,
+              scenarioKey: s.scenarioKey,
+              decisionId: d.id,
+              decisionKey: d.decisionKey,
+              stageId,
+              stageKey: st?.stageKey ?? '—',
+              triggerKey: tr?.triggerKey ?? '—',
+              actionsCount: (d.actions?.length ?? 0),
+              conditionsCount: (d.conditionIds?.length ?? 0),
+              events: (d.producedEventIds ?? []).map((id) => eventKeyById.get(id) ?? '—'),
+            });
+          }
+        }
 
-    this.rows = out;
+        // مرتب‌سازی: اول uiActionKey بعد stage بعد scenario
+        out.sort((a, b) =>
+          a.uiActionKey.localeCompare(b.uiActionKey) ||
+          a.stageKey.localeCompare(b.stageKey) ||
+          a.scenarioKey.localeCompare(b.scenarioKey) ||
+          a.decisionKey.localeCompare(b.decisionKey),
+        );
+
+        this.rows = out;
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
   }
 
   get filtered(): DecisionRow[]
@@ -108,7 +126,7 @@ export class UiBindingsComponent
     const q = this.q.trim().toLowerCase();
     return this.rows.filter(r =>
     {
-      if (this.stageId && r.stageId !== this.stageId) return false;
+      if (this.stageId != null && r.stageId !== this.stageId) return false;
       if (!q) return true;
       return (
         r.uiActionKey.toLowerCase().includes(q) ||

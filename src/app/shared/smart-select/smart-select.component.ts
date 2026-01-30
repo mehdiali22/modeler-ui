@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-export type SmartOption = { id: string; text: string; sub?: string };
+export type SmartOption = { id: number; text: string; sub?: string };
 
 @Component({
   selector: 'app-smart-select',
@@ -16,8 +16,8 @@ export class SmartSelectComponent
   @Input() placeholder = 'انتخاب...';
   @Input() options: SmartOption[] = [];
 
-  @Input() value: string = '';
-  @Output() valueChange = new EventEmitter<string>();
+  @Input() value: number | null = null;
+  @Output() valueChange = new EventEmitter<number | null>();
 
   @Input() disabled = false;
 
@@ -32,11 +32,14 @@ export class SmartSelectComponent
     );
   }
 
-  onPick(v: string)
-  {
-    this.value = v;
-    this.valueChange.emit(v);
-  }
+  onPick(raw: string)
+{
+  const v = (raw ?? '').toString().trim();
+  const parsed = v === '' ? null : +v;
+  this.value = (parsed === null || Number.isFinite(parsed)) ? parsed : null;
+  this.valueChange.emit(this.value);
+}
+
 
   trackById(_: number, x: SmartOption) { return x.id; }
 }

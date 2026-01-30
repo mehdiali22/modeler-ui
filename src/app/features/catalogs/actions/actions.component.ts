@@ -1,18 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
 import { ActionDefinition, ActorDefinition, Artifact } from '../../../core/types';
+import { ActionApiService } from '../../../core/api/action-api.service';
+import { ArtifactApiService } from '../../../core/api/artifact-api.service';
+import { ActorApiService } from '../../../core/api/actor-api.service';
+import { forkJoin } from 'rxjs';
 import { SmartSelectComponent, SmartOption } from '../../../shared/smart-select/smart-select.component';
-
-const COL_ACTIONS = 'actions';
-const COL_ARTIFACTS = 'artifacts';
-const COL_ACTORS = 'actors';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
-
 @Component({
   selector: 'app-actions',
   standalone: true,
@@ -20,7 +13,7 @@ function uid()
   templateUrl: './actions.component.html',
   styleUrls: ['./actions.component.scss'],
 })
-export class ActionsComponent
+export class ActionsComponent implements OnInit
 {
   rows: ActionDefinition[] = [];
   artifacts: Artifact[] = [];
@@ -29,24 +22,61 @@ export class ActionsComponent
   artifactOptions: SmartOption[] = [];
   actorOptions: SmartOption[] = [];
 
+
+  error: string | null = null;
   q = '';
-  editingId: string | null = null;
+  editingId: number | null = null;
   edit: any = null;
 
-  constructor(private store: CatalogStoreService)
+  constructor(
+    private actionsApi: ActionApiService,
+    private artifactsApi: ArtifactApiService,
+    private actorsApi: ActorApiService,
+  ) {}
+
+
+  ngOnInit(): void
   {
-    this.reload();
+    this.load();
   }
 
-  reload()
-  {
-    this.rows = this.store.list<ActionDefinition>(COL_ACTIONS);
-    this.artifacts = this.store.list<Artifact>(COL_ARTIFACTS);
-    this.actors = this.store.list<ActorDefinition>(COL_ACTORS);
+load()
+{
+  this.error = null;
+  forkJoin({
+    actions: this.actionsApi.list(),
+    artifacts: this.artifactsApi.list(),
+    actors: this.actorsApi.list(),
+  }).subscribe({
+    next: res =>
+    {
+      this.rows = res.actions ?? [];
+      this.artifacts = res.artifacts ?? [];
+      this.actors = res.actors ?? [];
+      this.rebuildOptions();},
+    error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); }
+  });
+}
 
-    this.artifactOptions = this.artifacts.map(a => ({ id: a.id, text: a.artifactKey, sub: a.titleFa }));
-    this.actorOptions = this.actors.map(a => ({ id: a.id, text: a.actorKey, sub: a.titleFa }));
+private rebuildOptions()
+{
+  this.artifactOptions = (this.artifacts ?? []).map(a => ({
+    id: a.id,
+    text: a.artifactKey,
+    sub: a.titleFa ?? '',
+  }));
+
+  this.actorOptions = (this.actors ?? []).map(a => ({
+    id: a.id,
+    text: a.actorKey,
+    sub: a.titleFa ?? '',
+  }));
+}
+reload()
+  {
+    this.load();
   }
+
 
   get filtered()
   {
@@ -58,22 +88,29 @@ export class ActionsComponent
   }
 
   add()
-  {
-    const r: any = {
-      id: uid(),
-      actionKey: 'NEW_ACTION',
-      titleFa: 'اکشن جدید',
-      targetArtifactId: this.artifacts[0]?.id ?? '',
-      executorKind: 'System',
-      executorActorId: '',
-      defaultParamsJson: '',
-    };
-    this.rows = [r, ...this.rows];
-    this.store.save(COL_ACTIONS, this.rows);
-    this.editRow(r.id);
-  }
+{
+  this.error = null;
+  const payload: Omit<ActionDefinition, 'id'> = {
+    actionKey: 'NEW_ACTION',
+    titleFa: 'اکشن جدید',
+    targetArtifactId: this.artifacts[0]?.id,
+    executorKind: 'System',
+    executorActorId: undefined,
+    defaultParamsJson: '',
+  };
 
-  editRow(id: string)
+  this.actionsApi.create(payload).subscribe({
+    next: created =>
+    {
+      this.rows = [created, ...this.rows];
+      this.editRow(created.id);
+    },
+    error: err => { this.error = (err?.message ?? 'خطا در ایجاد'); }
+  });
+}
+
+
+  editRow(id: number)
   {
     this.editingId = id;
     const src = this.rows.find(x => x.id === id);
@@ -95,21 +132,41 @@ export class ActionsComponent
     this.edit.titleFa = (this.edit.titleFa ?? '').trim();
     this.edit.defaultParamsJson = (this.edit.defaultParamsJson ?? '').trim();
 
-    if (this.edit.executorKind !== 'Human') this.edit.executorActorId = '';
+        if (this.edit.executorKind !== 'Human') this.edit.executorActorId = undefined;
+    const id = this.edit.id as number;
 
-    const idx = this.rows.findIndex(x => x.id === this.edit.id);
-    if (idx >= 0)
-    {
-      this.rows[idx] = this.edit;
-      this.store.save(COL_ACTIONS, this.rows);
-      this.cancel();
-    }
-  }
+const payload: Omit<ActionDefinition, 'id'> = {
+  actionKey: this.edit.actionKey,
+  titleFa: this.edit.titleFa,
+  targetArtifactId: this.edit.targetArtifactId,
+  executorKind: this.edit.executorKind,
+  executorActorId: this.edit.executorActorId,
+  description: this.edit.description,
+  defaultParamsJson: this.edit.defaultParamsJson,
+};
 
-  remove(id: string)
+this.actionsApi.update(id, payload).subscribe({
+  next: updated =>
   {
-    this.rows = this.rows.filter(x => x.id !== id);
-    this.store.save(COL_ACTIONS, this.rows);
-    if (this.editingId === id) this.cancel();
+    const idx = this.rows.findIndex(x => x.id === id);
+    if (idx >= 0) this.rows[idx] = updated;
+    this.cancel();
+  },
+  error: err => { this.error = (err?.message ?? 'خطا در ویرایش'); }
+});
   }
+
+  remove(id: number)
+{
+  this.error = null;
+  this.actionsApi.delete(id).subscribe({
+    next: () =>
+    {
+      this.rows = this.rows.filter(x => x.id !== id);
+      if (this.editingId === id) this.cancel();
+    },
+    error: err => { this.error = (err?.message ?? 'خطا در حذف'); }
+  });
+}
+
 }

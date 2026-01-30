@@ -1,19 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
+
 import { Process } from '../../../core/types';
-
-const COL = 'processes';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
+import { ProcessApiService } from '../../../core/api/process-api.service';
 
 type ProcessDraft = {
   processKey: string;
   titleFa: string;
-  order: string; // از input میاد string، خودمون تبدیل می‌کنیم
+  order: string; // از input میاد string
   description: string;
 };
 
@@ -24,33 +18,42 @@ type ProcessDraft = {
   templateUrl: './processes.component.html',
   styleUrls: ['./processes.component.scss'],
 })
-export class ProcessesComponent
-{
+export class ProcessesComponent implements OnInit {
   rows: Process[] = [];
-  editingId: string | null = null;
-
-  draft: ProcessDraft = this.newDraft();
+  editingId: number | null = null;
   error: string | null = null;
 
-  constructor(private store: CatalogStoreService)
-  {
-    this.rows = this.store.list<Process>(COL);
+  draft: ProcessDraft = this.newDraft();
+
+  constructor(private api: ProcessApiService) {}
+
+  ngOnInit(): void {
+    this.load();
   }
 
-  private newDraft(): ProcessDraft
-  {
+  load() {
+    this.error = null;
+    this.api.list().subscribe({
+      next: (rows) => {
+        this.rows = rows ?? [];
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
+  }
+
+  private newDraft(): ProcessDraft {
     return { processKey: '', titleFa: '', order: '', description: '' };
   }
 
-  reset()
-  {
+  reset() {
     this.editingId = null;
     this.error = null;
     this.draft = this.newDraft();
   }
 
-  edit(r: Process)
-  {
+  edit(r: Process) {
     this.editingId = r.id;
     this.error = null;
     this.draft = {
@@ -61,27 +64,42 @@ export class ProcessesComponent
     };
   }
 
-  remove(r: Process)
-  {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL, this.rows);
-    if (this.editingId === r.id) this.reset();
+  remove(r: Process) {
+    this.error = null;
+    this.api.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter((x) => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در حذف';
+      },
+    });
   }
 
-  submit()
-  {
+  submit() {
     this.error = null;
 
     const processKey = (this.draft.processKey || '').trim();
-    if (!processKey) { this.error = 'ProcessKey اجباری است.'; return; }
+    if (!processKey) {
+      this.error = 'ProcessKey اجباری است.';
+      return;
+    }
 
-    const dup = this.rows.find(x =>
-      x.processKey.toLowerCase() === processKey.toLowerCase() && x.id !== this.editingId
+    const dup = this.rows.find(
+      (x) => x.processKey.toLowerCase() === processKey.toLowerCase() && x.id !== this.editingId,
     );
-    if (dup) { this.error = 'ProcessKey تکراری است.'; return; }
+    if (dup) {
+      this.error = 'ProcessKey تکراری است.';
+      return;
+    }
 
-    const orderNum = (this.draft.order || '').trim() === '' ? undefined : Number(this.draft.order);
-    if (orderNum != null && Number.isNaN(orderNum)) { this.error = 'Order باید عدد باشد.'; return; }
+    const orderRaw = (this.draft.order || '').trim();
+    const orderNum = orderRaw === '' ? undefined : Number(orderRaw);
+    if (orderNum != null && Number.isNaN(orderNum)) {
+      this.error = 'Order باید عدد باشد.';
+      return;
+    }
 
     const payload: Omit<Process, 'id'> = {
       processKey,
@@ -90,15 +108,27 @@ export class ProcessesComponent
       order: orderNum,
     };
 
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
+    if (this.editingId !== null) {
+      const id = this.editingId;
+      this.api.update(id, payload).subscribe({
+        next: (updated) => {
+          this.rows = this.rows.map((r) => (r.id === id ? updated : r));
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ویرایش';
+        },
+      });
+    } else {
+      this.api.create(payload).subscribe({
+        next: (created) => {
+          this.rows = [created, ...this.rows];
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ایجاد';
+        },
+      });
     }
-
-    this.store.save(COL, this.rows);
-    this.reset();
   }
 }

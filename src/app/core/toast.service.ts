@@ -3,16 +3,18 @@ import { BehaviorSubject } from 'rxjs';
 
 export type ToastKind = 'info' | 'success' | 'warn' | 'error';
 export type ToastItem = {
-  id: string;
+  id: number;
   text: string;
   kind: ToastKind;
   createdAt: number;
   ttlMs: number;
 };
 
-function uid()
+let __toastSeq = 0;
+function uid(): number
 {
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
+  __toastSeq += 1;
+  return __toastSeq;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,7 +36,7 @@ export class ToastService
   warn(text: string, ttlMs = 2800) { this.show(text, 'warn', ttlMs); }
   error(text: string, ttlMs = 3500) { this.show(text, 'error', ttlMs); }
 
-  remove(id: string)
+  remove(id: number)
   {
     const next = this._items.value.filter(x => x.id !== id);
     this._items.next(next);

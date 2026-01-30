@@ -1,14 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
+
 import { TriggerDefinition } from '../../../core/types';
-
-const COL = 'triggers';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
+import { TriggerApiService } from '../../../core/api/trigger-api.service';
 
 type TriggerDraft = {
   triggerKey: string;
@@ -23,33 +17,42 @@ type TriggerDraft = {
   templateUrl: './triggers.component.html',
   styleUrls: ['./triggers.component.scss'],
 })
-export class TriggersComponent
-{
+export class TriggersComponent implements OnInit {
   rows: TriggerDefinition[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
   error: string | null = null;
 
   draft: TriggerDraft = this.newDraft();
 
-  constructor(private store: CatalogStoreService)
-  {
-    this.rows = this.store.list<TriggerDefinition>(COL);
+  constructor(private api: TriggerApiService) {}
+
+  ngOnInit(): void {
+    this.load();
   }
 
-  private newDraft(): TriggerDraft
-  {
+  load() {
+    this.error = null;
+    this.api.list().subscribe({
+      next: (rows) => {
+        this.rows = rows ?? [];
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
+  }
+
+  private newDraft(): TriggerDraft {
     return { triggerKey: '', titleFa: '', description: '' };
   }
 
-  reset()
-  {
+  reset() {
     this.editingId = null;
     this.error = null;
     this.draft = this.newDraft();
   }
 
-  edit(r: TriggerDefinition)
-  {
+  edit(r: TriggerDefinition) {
     this.editingId = r.id;
     this.error = null;
     this.draft = {
@@ -59,25 +62,35 @@ export class TriggersComponent
     };
   }
 
-  remove(r: TriggerDefinition)
-  {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL, this.rows);
-    if (this.editingId === r.id) this.reset();
+  remove(r: TriggerDefinition) {
+    this.error = null;
+    this.api.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter((x) => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در حذف';
+      },
+    });
   }
 
-  submit()
-  {
+  submit() {
     this.error = null;
 
     const triggerKey = (this.draft.triggerKey || '').trim();
-    if (!triggerKey) { this.error = 'TriggerKey اجباری است.'; return; }
+    if (!triggerKey) {
+      this.error = 'TriggerKey اجباری است.';
+      return;
+    }
 
-    const dup = this.rows.find(x =>
-      x.triggerKey.toLowerCase() === triggerKey.toLowerCase() &&
-      x.id !== this.editingId
+    const dup = this.rows.find(
+      (x) => x.triggerKey.toLowerCase() === triggerKey.toLowerCase() && x.id !== this.editingId,
     );
-    if (dup) { this.error = 'TriggerKey تکراری است.'; return; }
+    if (dup) {
+      this.error = 'TriggerKey تکراری است.';
+      return;
+    }
 
     const payload: Omit<TriggerDefinition, 'id'> = {
       triggerKey,
@@ -85,15 +98,27 @@ export class TriggersComponent
       description: (this.draft.description || '').trim() || undefined,
     };
 
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
+    if (this.editingId !== null) {
+      const id = this.editingId;
+      this.api.update(id, payload).subscribe({
+        next: (updated) => {
+          this.rows = this.rows.map((r) => (r.id === id ? updated : r));
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ویرایش';
+        },
+      });
+    } else {
+      this.api.create(payload).subscribe({
+        next: (created) => {
+          this.rows = [created, ...this.rows];
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ایجاد';
+        },
+      });
     }
-
-    this.store.save(COL, this.rows);
-    this.reset();
   }
 }

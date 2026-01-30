@@ -12,8 +12,8 @@
 
       <select class="inp"
               *ngIf="startMode==='trigger'"
-              [value]="startTriggerId"
-              (change)="startTriggerId = $any($event.target).value; rebuild()">
+              [value]="startTriggerId ?? 0"
+              (change)="startTriggerId = +$any($event.target).value; rebuild()">
         <option *ngFor="let t of triggers" [value]="t.id">
           {{ t.triggerKey }} — {{ t.titleFa }}
         </option>
@@ -21,17 +21,17 @@
 
       <select class="inp"
               *ngIf="startMode==='scenario'"
-              [value]="startScenarioId"
-              (change)="startScenarioId = $any($event.target).value; rebuild()">
+              [value]="startScenarioId ?? 0"
+              (change)="startScenarioId = +$any($event.target).value; rebuild()">
         <option *ngFor="let s of scenarios" [value]="s.id">
           {{ s.scenarioKey }} — {{ s.titleFa }}
         </option>
       </select>
 
       <select class="inp"
-              [value]="stageId"
-              (change)="stageId = $any($event.target).value; rebuild()">
-        <option value="">Stage Filter: همه</option>
+              [value]="stageId ?? 0"
+              (change)="stageId = (+$any($event.target).value || 0); stageId = (stageId===0? null: stageId); rebuild()">
+        <option value="0">Stage Filter: همه</option>
         <option *ngFor="let s of stages" [value]="s.id">
           {{ s.titleFa }} ({{ s.stageKey }})
         </option>
@@ -58,7 +58,7 @@
         Only expand selected Stage
       </label>
 
-      <button class="btn" (click)="reload(); rebuild()">Reload</button>
+      <button class="btn" (click)="reload()">Reload</button>
     </div>
   </div>
 

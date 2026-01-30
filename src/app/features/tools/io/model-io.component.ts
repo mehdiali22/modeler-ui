@@ -1,52 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
 
-const COLS = [
-  'processes',
-  'stages',
-  'artifacts',
-  'facts',
-  'conditions',
-  'actors',
-  'actions',
-  'triggers',
-  'events',
-  'scenarios',
-  'eventTriggerLinks',
-] as const;
+import { ToolsApiService } from '../../../core/api/tools-api.service';
 
-type ColName = typeof COLS[number];
-
-type ModelDump = {
-  exportedAt: string;
-  cols: Record<ColName, any[]>;
-};
-
-function downloadText(filename: string, text: string) {
-  const blob = new Blob([text], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function tryParseJson(text: string): any | null {
-  try { return JSON.parse(text); } catch { return null; }
-}
-
-function mergeById(existing: any[], incoming: any[]) {
-  const map = new Map<string, any>();
-  for (const x of existing ?? []) {
-    if (x?.id) map.set(x.id, x);
-  }
-  for (const x of incoming ?? []) {
-    if (x?.id) map.set(x.id, x);
-  }
-  return [...map.values()];
-}
+type ImportMode = 'merge' | 'overwrite';
 
 @Component({
   selector: 'app-model-io',
@@ -56,86 +13,99 @@ function mergeById(existing: any[], incoming: any[]) {
   styleUrls: ['./model-io.component.scss'],
 })
 export class ModelIoComponent {
-  mode: 'overwrite' | 'merge' = 'merge';
+  mode: ImportMode = 'merge';
   text = '';
-  log: string[] = [];
+  log = '';
 
-  constructor(private store: CatalogStoreService) {
-    this.refreshTextFromStore();
+  constructor(private toolsApi: ToolsApiService) {
+    this.refreshTextFromApi();
   }
 
-  private write(msg: string) {
-    this.log = [msg, ...this.log];
+  refreshTextFromApi() {
+    this.log = 'در حال دریافت...';
+    this.toolsApi.export().subscribe({
+      next: (res) => {
+        this.text = JSON.stringify(res, null, 2);
+        this.log = 'OK';
+      },
+      error: (err) => {
+        this.log = (err?.message ?? 'خطا در ارتباط با API');
+      }
+    });
   }
 
-  refreshTextFromStore() {
-    const dump: ModelDump = {
-      exportedAt: new Date().toISOString(),
-      cols: {} as any,
-    };
+  download() {
+    const name = `model-export-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+    const blob = new Blob([this.text || ''], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-    for (const c of COLS) {
-      dump.cols[c] = this.store.list<any>(c);
+  // Backward-compatible name (template expects this)
+  exportDownload() {
+    this.download();
+  }
+
+  importApply() {
+    let obj: any;
+    try {
+      obj = JSON.parse(this.text || '{}');
+    } catch {
+      this.log = 'JSON نامعتبر است';
+      return;
     }
 
-    this.text = JSON.stringify(dump, null, 2);
-    this.write('REFRESH از store انجام شد');
-  }
-
-  exportDownload() {
-    const name = `model-v3-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
-    downloadText(name, this.text || '{}');
-    this.write(`DOWNLOAD: ${name}`);
+    this.log = 'در حال ارسال...';
+    this.toolsApi.import(obj, this.mode).subscribe({
+      next: () => {
+        this.log = 'OK';
+      },
+      error: (err) => {
+        this.log = (err?.message ?? 'خطا در import');
+      }
+    });
   }
 
   onFilePicked(ev: Event) {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
+    const input = ev.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       this.text = String(reader.result ?? '');
-      this.write(`FILE LOADED: ${file.name}`);
     };
-    reader.readAsText(file, 'utf-8');
-  }
-
-  importApply() {
-    const parsed = tryParseJson(this.text);
-    if (!parsed) {
-      this.write('ERROR: JSON نامعتبر است');
-      return;
-    }
-
-    // حالت‌های قابل قبول:
-    // 1) { exportedAt, cols: {facts:[], ...} }
-    // 2) { facts:[], conditions:[], ... }  (بدون wrapper)
-    const colsObj: any = parsed?.cols ?? parsed;
-
-    let total = 0;
-
-    for (const c of COLS) {
-      const incoming = Array.isArray(colsObj?.[c]) ? colsObj[c] : null;
-      if (!incoming) continue;
-
-      const current = this.store.list<any>(c);
-      const next = this.mode === 'overwrite'
-        ? incoming
-        : mergeById(current, incoming);
-
-      this.store.save(c, next);
-      total += incoming.length;
-
-      this.write(`${this.mode.toUpperCase()} ${c}: +${incoming.length} (now ${next.length})`);
-    }
-
-    this.write(`IMPORT DONE ✅ totalIncoming=${total}`);
+    reader.onerror = () => {
+      this.log = 'خطا در خواندن فایل';
+    };
+    reader.readAsText(file);
   }
 
   clearAll() {
-    for (const c of COLS) this.store.save(c, []);
-    this.write('CLEAR ALL ✅');
-    this.refreshTextFromStore();
+    const emptyCols = {
+      actionCatalog: [],
+      actors: [],
+      artifacts: [],
+      conditions: [],
+      facts: [],
+      dictionaryTerms: [],
+      factEnumValues: [],
+      processes: [],
+      stages: [],
+      triggers: [],
+      events: [],
+      scenarios: [],
+      eventTriggerLinks: [],
+      subProcesses: [],
+    };
+    const payload = { exportedAt: new Date().toISOString(), cols: emptyCols };
+
+    this.mode = 'overwrite';
+    this.text = JSON.stringify(payload, null, 2);
+    this.importApply();
   }
 }

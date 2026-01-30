@@ -63,8 +63,8 @@
           <div>
             <div class="lbl">targetArtifact</div>
             <app-smart-select [options]="artifactOptions"
-                              [value]="edit.targetArtifactId"
-                              (valueChange)="edit.targetArtifactId = $event">
+                              [value]="edit.targetArtifactId ?? null"
+                              (valueChange)="edit.targetArtifactId = ($event ?? undefined)">
             </app-smart-select>
           </div>
 
@@ -81,8 +81,8 @@
           <div>
             <div class="lbl">executorActor</div>
             <app-smart-select [options]="actorOptions"
-                              [value]="edit.executorActorId || ''"
-                              (valueChange)="edit.executorActorId = $event">
+                              [value]="edit.executorActorId ?? null"
+                              (valueChange)="edit.executorActorId = ($event ?? undefined)">
             </app-smart-select>
           </div>
           <div></div>

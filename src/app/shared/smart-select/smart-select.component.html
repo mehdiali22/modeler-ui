@@ -9,7 +9,7 @@
 
   <select class="sel"
           [disabled]="disabled"
-          [value]="value"
+          [value]="value ?? ''"
           (change)="onPick($any($event.target).value)">
     <option value="">{{ placeholder }}</option>
     <option *ngFor="let o of filtered; trackBy: trackById" [value]="o.id">

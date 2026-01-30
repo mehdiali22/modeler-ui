@@ -25,17 +25,17 @@
     <div class="panel" *ngIf="mode==='Trigger'">
       <div class="row2">
         <label class="lbl">Trigger</label>
-        <select class="inp" [value]="selectedTriggerId" (change)="selectedTriggerId = $any($event.target).value">
-          <option value="">—</option>
+        <select class="inp" [value]="selectedTriggerId ?? 0" (change)="selectedTriggerId = (+$any($event.target).value || 0); selectedTriggerId = (selectedTriggerId===0? null: selectedTriggerId)">
+          <option value="0">—</option>
           <option *ngFor="let t of triggers" [value]="t.id">
             {{ t.triggerKey }}{{ t.titleFa ? (' — ' + t.titleFa) : '' }}
           </option>
         </select>
       </div>
 
-      <div class="empty" *ngIf="!selectedTriggerId">یک Trigger انتخاب کن.</div>
+      <div class="empty" *ngIf="selectedTriggerId === null">یک Trigger انتخاب کن.</div>
 
-      <div *ngIf="selectedTriggerId">
+      <div *ngIf="selectedTriggerId !== null">
         <div class="hint">
           سناریوهایی که Triggerشان <b>{{ triggerKeyById(selectedTriggerId) }}</b> است:
         </div>
@@ -62,7 +62,7 @@
               <span class="chip">Events: {{ statsScenario(s).ev }}</span>
             </div>
 
-            <div class="events-block" *ngIf="(s.producedEventIds?.length ?? 0) > 0; else noEv1">
+            <div class="events-block" *ngIf="scenarioAllProducedEventIds(s).length > 0; else noEv1">
               <div class="events-title">Produced Events</div>
 
               <div class="ev-row" *ngFor="let eid of scenarioAllProducedEventIds(s)">
@@ -88,7 +88,7 @@
                 </div>
               </div>
 
-              <div class="downlist" *ngFor="let eid of s.producedEventIds">
+              <div class="downlist" *ngFor="let eid of scenarioAllProducedEventIds(s)">
                 <div class="down-title" *ngIf="downstreamScenariosFromEvent(eid).length">
                   سناریوهای پایین‌دست برای {{ eventKeyById(eid) }}:
                 </div>
@@ -118,17 +118,17 @@
     <div class="panel" *ngIf="mode==='Event'">
       <div class="row2">
         <label class="lbl">Event</label>
-        <select class="inp" [value]="selectedEventId" (change)="selectedEventId = $any($event.target).value">
-          <option value="">—</option>
+        <select class="inp" [value]="selectedEventId ?? 0" (change)="selectedEventId = (+$any($event.target).value || 0); selectedEventId = (selectedEventId===0? null: selectedEventId)">
+          <option value="0">—</option>
           <option *ngFor="let e of events" [value]="e.id">
             {{ e.eventKey }}{{ e.titleFa ? (' — ' + e.titleFa) : '' }}
           </option>
         </select>
       </div>
 
-      <div class="empty" *ngIf="!selectedEventId">یک Event انتخاب کن.</div>
+      <div class="empty" *ngIf="selectedEventId === null">یک Event انتخاب کن.</div>
 
-      <div *ngIf="selectedEventId">
+      <div *ngIf="selectedEventId !== null">
         <div class="hint">
           سناریوهایی که Event <b>{{ eventKeyById(selectedEventId) }}</b> را تولید می‌کنند:
         </div>

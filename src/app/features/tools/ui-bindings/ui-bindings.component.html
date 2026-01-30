@@ -4,8 +4,8 @@
 
     <div class="tools">
       <select class="inp"
-              [value]="stageId"
-              (change)="stageId = $any($event.target).value">
+              [value]="stageId ?? 0"
+              (change)="stageId = (+$any($event.target).value || 0); stageId = (stageId===0? null: stageId)">
         <option value="">همه Stageها</option>
         <option *ngFor="let s of stages" [value]="s.id">
           {{ s.titleFa }} ({{ s.stageKey }})

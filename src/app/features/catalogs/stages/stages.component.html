@@ -11,7 +11,7 @@
 
     <div class="form" *ngIf="processes.length">
       <label>Process</label>
-      <select class="inp" [value]="draft.processId" (change)="draft.processId = $any($event.target).value">
+      <select class="inp" [value]="draft.processId" (change)="draft.processId = +$any($event.target).value">
         <option *ngFor="let p of processes" [value]="p.id">
           {{ p.processKey }}{{ p.titleFa ? (' — ' + p.titleFa) : '' }}
         </option>
@@ -42,7 +42,7 @@
       <div class="actions">
         <button type="button" class="btn ghost" (click)="reset()">ریست</button>
         <button type="button" class="btn primary" (click)="submit()">
-          {{ editingId ? 'ذخیره' : 'افزودن' }}
+          {{ editingId !== null ? 'ذخیره' : 'افزودن' }}
         </button>
       </div>
 

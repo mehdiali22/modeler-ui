@@ -8,7 +8,7 @@
     <div class="toolbar">
       <div class="row">
         <label class="lbl">Process</label>
-        <select class="inp" [value]="selectedProcessId" (change)="selectedProcessId = $any($event.target).value">
+        <select class="inp" [value]="selectedProcessId" (change)="selectedProcessId = (+$any($event.target).value || 0); selectedProcessId = (selectedProcessId===0 ? null : selectedProcessId)">
           <option value="">—</option>
           <option *ngFor="let p of processes" [value]="p.id">
             {{ p.processKey }}{{ p.titleFa ? (' — ' + p.titleFa) : '' }}

@@ -1,6 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
+import { forkJoin } from 'rxjs';
+import { StageApiService } from '../../../core/api/stage-api.service';
+import { TriggerApiService } from '../../../core/api/trigger-api.service';
+import { EventApiService } from '../../../core/api/event-api.service';
+import { ScenarioApiService } from '../../../core/api/scenario-api.service';
+import { EventTriggerLinkApiService } from '../../../core/api/event-trigger-link-api.service';
 import { RouterLink } from '@angular/router';
 import
   {
@@ -22,8 +27,8 @@ type NodeType = 'TR' | 'SC' | 'DC' | 'EV';
 type NodeRef = {
   nid: string;      // unique node id: TR:.. SC:.. DC:.. EV:..
   t: NodeType;
-  id: string;       // actual id in store (for DC: decisionId)
-  scenarioId?: string; // for DC nodes
+  id: number;       // actual id in store (for DC: decisionId)
+  scenarioId?: number; // for DC nodes
 };
 
 type EdgeRow = {
@@ -39,10 +44,10 @@ type PathRow = {
   loop: boolean;
 };
 
-function nidTR(id: string) { return `TR:${id}`; }
-function nidSC(id: string) { return `SC:${id}`; }
-function nidEV(id: string) { return `EV:${id}`; }
-function nidDC(scenarioId: string, decisionId: string) { return `DC:${scenarioId}:${decisionId}`; }
+function nidTR(id: number) { return `TR:${id}`; }
+function nidSC(id: number) { return `SC:${id}`; }
+function nidEV(id: number) { return `EV:${id}`; }
+function nidDC(scenarioId: number, decisionId: number) { return `DC:${scenarioId}:${decisionId}`; }
 
 @Component({
   selector: 'app-flow-view',
@@ -51,8 +56,9 @@ function nidDC(scenarioId: string, decisionId: string) { return `DC:${scenarioId
   templateUrl: './flow-view.component.html',
   styleUrls: ['./flow-view.component.scss'],
 })
-export class FlowViewComponent
+export class FlowViewComponent implements OnInit
 {
+  error: string | null = null;
   stages: Stage[] = [];
   triggers: TriggerDefinition[] = [];
   events: EventDefinition[] = [];
@@ -61,9 +67,9 @@ export class FlowViewComponent
 
   // UI state
   startMode: 'trigger' | 'scenario' = 'trigger';
-  startTriggerId = '';
-  startScenarioId = '';
-  stageId = '';
+  startTriggerId: number | null = null;
+  startScenarioId: number | null = null;
+  stageId: number | null = null;
   maxDepth = 8;
   includeDecisions = true;
   showOnlySelectedStage = false;
@@ -76,10 +82,16 @@ export class FlowViewComponent
   loopsCount = 0;
   nodesCount = 0;
 
-  constructor(private store: CatalogStoreService)
-  {
+  constructor(
+    private stagesApi: StageApiService,
+    private triggersApi: TriggerApiService,
+    private eventsApi: EventApiService,
+    private scenariosApi: ScenarioApiService,
+    private linksApi: EventTriggerLinkApiService,
+  ) {}
+
+  ngOnInit(): void {
     this.reload();
-    this.rebuild();
   }
 
   openQuery(n: any)
@@ -92,40 +104,56 @@ export class FlowViewComponent
   }
 
 
-  reload()
-  {
-    this.stages = this.store.list<Stage>(COL_STAGES);
-    this.triggers = this.store.list<TriggerDefinition>(COL_TRIGGERS);
-    this.events = this.store.list<EventDefinition>(COL_EVENTS);
-    this.scenarios = this.store.list<Scenario>(COL_SCENARIOS);
-    this.links = this.store.list<EventTriggerLink>(COL_LINKS);
+  reload() {
+    this.error = null;
 
-    if (!this.startTriggerId && this.triggers.length) this.startTriggerId = this.triggers[0].id;
-    if (!this.startScenarioId && this.scenarios.length) this.startScenarioId = this.scenarios[0].id;
+    forkJoin({
+      stages: this.stagesApi.list(),
+      triggers: this.triggersApi.list(),
+      events: this.eventsApi.list(),
+      scenarios: this.scenariosApi.list(),
+      links: this.linksApi.list(),
+    }).subscribe({
+      next: res => {
+        this.stages = res.stages ?? [];
+        this.triggers = res.triggers ?? [];
+        this.events = res.events ?? [];
+        this.scenarios = res.scenarios ?? [];
+        this.links = res.links ?? [];
+
+        if (this.startTriggerId === null && this.triggers.length) this.startTriggerId = this.triggers[0].id;
+        if (this.startScenarioId === null && this.scenarios.length) this.startScenarioId = this.scenarios[0].id;
+
+        this.rebuild();
+      },
+      error: err => {
+        this.error = (err?.message ?? 'خطا در ارتباط با API');
+      },
+    });
   }
 
   // ---------- label helpers ----------
-  stageById(id: string) { return this.stages.find(x => x.id === id); }
+  stageById(id: number) { return this.stages.find(x => x.id === id); }
 
-  triggerLabel(id: string)
+  triggerLabel(id: number)
   {
     const t = this.triggers.find(x => x.id === id);
     return t ? `${t.triggerKey}${t.titleFa ? ' — ' + t.titleFa : ''}` : '—';
   }
 
-  eventLabel(id: string)
+  eventLabel(id: number)
   {
     const e = this.events.find(x => x.id === id);
     return e ? `${e.eventKey}${e.titleFa ? ' — ' + e.titleFa : ''}` : '—';
   }
 
-  scenarioLabel(id: string)
+  scenarioLabel(id: number)
   {
     const s = this.scenarios.find(x => x.id === id);
     return s ? `${s.scenarioKey}${s.titleFa ? ' — ' + s.titleFa : ''}` : '—';
   }
 
-  decisionLabel(scenarioId: string, decisionId: string)
+  decisionLabel(scenarioId: number, decisionId: number)
   {
     const s: any = this.scenarios.find(x => x.id === scenarioId) as any;
     const d: any = (s?.decisions ?? []).find((x: any) => x.id === decisionId);
@@ -135,22 +163,22 @@ export class FlowViewComponent
     return t ? `${k} — ${t}` : k;
   }
 
-  uiActionKeyOfDecision(scenarioId: string, decisionId: string): string
+  uiActionKeyOfDecision(scenarioId: number, decisionId: number): string
   {
     const s: any = this.scenarios.find(x => x.id === scenarioId) as any;
     const d: any = (s?.decisions ?? []).find((x: any) => x.id === decisionId);
     return (d?.uiActionKey ?? '').trim();
   }
 
-  scenarioStageId(scenarioId: string): string
+  scenarioStageId(scenarioId: number): number | null
   {
     const s = this.scenarios.find(x => x.id === scenarioId);
-    return s?.stageId ?? '';
+    return s?.stageId ?? null;
   }
 
-  isDimScenario(scenarioId: string): boolean
+  isDimScenario(scenarioId: number): boolean
   {
-    if (!this.stageId) return false;
+    if (this.stageId === null) return false;
     const sid = this.scenarioStageId(scenarioId);
     return sid !== this.stageId;
   }
@@ -158,17 +186,17 @@ export class FlowViewComponent
   // ---------- build graph ----------
   rebuild()
   {
-    const triggerToScenarios = new Map<string, string[]>();
+    const triggerToScenarios = new Map<number, number[]>();
     for (const s of this.scenarios)
     {
-      const tr = (s as any).triggerId as string | undefined;
+      const tr = (s as any).triggerId as number | undefined;
       if (!tr) continue;
       const arr = triggerToScenarios.get(tr) ?? [];
       arr.push(s.id);
       triggerToScenarios.set(tr, arr);
     }
 
-    const eventToTriggers = new Map<string, string[]>();
+    const eventToTriggers = new Map<number, number[]>();
     for (const l of this.links)
     {
       const arr = eventToTriggers.get(l.eventId) ?? [];
@@ -179,6 +207,27 @@ export class FlowViewComponent
     const edges: EdgeRow[] = [];
     const edgeKey = new Set<string>();
     const paths: PathRow[] = [];
+if (this.startTriggerId === null && this.triggers.length) this.startTriggerId = this.triggers[0].id;
+if (this.startScenarioId === null && this.scenarios.length) this.startScenarioId = this.scenarios[0].id;
+
+if (this.startMode === 'trigger' && this.startTriggerId === null)
+{
+  this.edges = [];
+  this.paths = [];
+  this.loopsCount = 0;
+  this.nodesCount = 0;
+  return;
+}
+
+if (this.startMode === 'scenario' && this.startScenarioId === null)
+{
+  this.edges = [];
+  this.paths = [];
+  this.loopsCount = 0;
+  this.nodesCount = 0;
+  return;
+}
+
 
     const addEdge = (from: NodeRef, to: NodeRef, kind: EdgeRow['kind'], loop: boolean, depth: number) =>
     {
@@ -188,18 +237,18 @@ export class FlowViewComponent
       edges.push({ from, to, kind, loop, depth });
     };
 
-    const expandScenario = (scenarioId: string) =>
+    const expandScenario = (scenarioId: number) =>
     {
       const s: any = this.scenarios.find(x => x.id === scenarioId) as any;
-      const producedBase: string[] = (s?.producedEventIds ?? []) as string[];
+      const producedBase: number[] = (s?.producedEventIds ?? []) as number[];
       const decisions: any[] = (s?.decisions ?? []) as any[];
 
       if (this.includeDecisions && decisions.length)
       {
-        return { decisions, producedBase: [] as string[] };
+        return { decisions, producedBase: [] as number[] };
       }
       // اگر decisions را نمایش نمی‌دهیم: union از base + تصمیم‌ها
-      const producedFromDecisions: string[] = [];
+      const producedFromDecisions: number[] = [];
       for (const d of decisions)
       {
         for (const ev of (d?.producedEventIds ?? [])) producedFromDecisions.push(ev);
@@ -218,8 +267,8 @@ export class FlowViewComponent
 
     const startNode: NodeRef =
       this.startMode === 'trigger'
-        ? { nid: nidTR(this.startTriggerId), t: 'TR', id: this.startTriggerId }
-        : { nid: nidSC(this.startScenarioId), t: 'SC', id: this.startScenarioId };
+        ? { nid: nidTR(this.startTriggerId!), t: 'TR', id: this.startTriggerId! }
+        : { nid: nidSC(this.startScenarioId!), t: 'SC', id: this.startScenarioId! };
 
     const stack: Frame[] = [{ node: startNode, depth: 0, path: [startNode], pathSet: new Set([startNode.nid]) }];
 
@@ -237,9 +286,9 @@ export class FlowViewComponent
       }
 
       // apply showOnlySelectedStage (soft gate for expansion)
-      const allowExpandScenario = (scenarioId: string) =>
+      const allowExpandScenario = (scenarioId: number) =>
       {
-        if (!this.stageId) return true;
+        if (this.stageId === null) return true;
         if (!this.showOnlySelectedStage) return true;
         return this.scenarioStageId(scenarioId) === this.stageId;
       };
@@ -281,8 +330,8 @@ export class FlowViewComponent
         {
           for (const d of exp.decisions)
           {
-            const did = d.id as string;
-            const to: NodeRef = { nid: nidDC(node.id, did), t: 'DC', id: did, scenarioId: node.id };
+            const did = d.id as number;
+            const to: NodeRef = { nid: nidDC(node.id as number, did), t: 'DC', id: did, scenarioId: node.id as number };
             const isLoop = pathSet.has(to.nid);
             addEdge(node, to, 'SC->DC', isLoop, depth + 1);
 
@@ -328,7 +377,7 @@ export class FlowViewComponent
       {
         const s: any = this.scenarios.find(x => x.id === node.scenarioId) as any;
         const d: any = (s?.decisions ?? []).find((x: any) => x.id === node.id);
-        const produced: string[] = (d?.producedEventIds ?? []) as string[];
+        const produced: number[] = (d?.producedEventIds ?? []) as number[];
 
         if (!produced.length)
         {
@@ -446,7 +495,7 @@ export class FlowViewComponent
 
   isDimNode(n: NodeRef): boolean
   {
-    if (!this.stageId) return false;
+    if (this.stageId === null) return false;
     if (n.t === 'SC') return this.isDimScenario(n.id);
     if (n.t === 'DC') return this.isDimScenario(n.scenarioId!);
     return false;

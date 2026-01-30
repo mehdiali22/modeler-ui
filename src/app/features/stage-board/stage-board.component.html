@@ -22,7 +22,7 @@
         <label class="lbl">Stage</label>
         <select class="inp"
                 [value]="selectedStageId"
-                (change)="selectedStageId = $any($event.target).value">
+                (change)="onStageChanged($any($event.target).value)">
           <option value="">—</option>
           <option *ngFor="let st of stagesInSelectedProcess" [value]="st.id">
             {{ st.stageKey }}{{ st.titleFa ? (' — ' + st.titleFa) : '' }}

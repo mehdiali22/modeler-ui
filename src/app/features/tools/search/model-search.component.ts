@@ -1,7 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { forkJoin } from 'rxjs';
+
+import { ActionApiService } from '../../../core/api/action-api.service';
+import { ActorApiService } from '../../../core/api/actor-api.service';
+import { ArtifactApiService } from '../../../core/api/artifact-api.service';
+import { ConditionApiService } from '../../../core/api/condition-api.service';
+import { EventApiService } from '../../../core/api/event-api.service';
+import { EventTriggerLinkApiService } from '../../../core/api/event-trigger-link-api.service';
+import { FactApiService } from '../../../core/api/fact-api.service';
+import { ProcessApiService } from '../../../core/api/process-api.service';
+import { ScenarioApiService } from '../../../core/api/scenario-api.service';
+import { StageApiService } from '../../../core/api/stage-api.service';
+import { TriggerApiService } from '../../../core/api/trigger-api.service';
 
 const COLS = [
   'processes',
@@ -19,12 +31,12 @@ const COLS = [
 
 type ColName = typeof COLS[number];
 
-type OpenRef = { col: string; id: string; decisionId?: string };
+type OpenRef = { col: string; id: number; decisionId?: number };
 
 type Hit = {
   col: ColName | 'scenarioDecision';
-  id: string;
-  decisionId?: string;
+  id: number;
+  decisionId?: number;
   key: string;
   field: string;
   snippet: string;
@@ -69,16 +81,61 @@ export class ModelSearchComponent
   // results
   hits: Hit[] = [];
 
-  constructor(private store: CatalogStoreService)
-  {
+  error: string | null = null;
+
+  constructor(
+    private processesApi: ProcessApiService,
+    private stagesApi: StageApiService,
+    private artifactsApi: ArtifactApiService,
+    private factsApi: FactApiService,
+    private conditionsApi: ConditionApiService,
+    private actorsApi: ActorApiService,
+    private actionsApi: ActionApiService,
+    private triggersApi: TriggerApiService,
+    private eventsApi: EventApiService,
+    private scenariosApi: ScenarioApiService,
+    private linksApi: EventTriggerLinkApiService,
+  ) {
     this.reload();
     this.search();
   }
 
   reload()
   {
+    this.error = null;
     this.data.clear();
-    for (const c of COLS) this.data.set(c, this.store.list<any>(c));
+
+    forkJoin({
+      processes: this.processesApi.list(),
+      stages: this.stagesApi.list(),
+      artifacts: this.artifactsApi.list(),
+      facts: this.factsApi.list(),
+      conditions: this.conditionsApi.list(),
+      actors: this.actorsApi.list(),
+      actions: this.actionsApi.list(),
+      triggers: this.triggersApi.list(),
+      events: this.eventsApi.list(),
+      scenarios: this.scenariosApi.list(),
+      eventTriggerLinks: this.linksApi.list(),
+    }).subscribe({
+      next: (res) => {
+        this.data.set('processes', res.processes ?? []);
+        this.data.set('stages', res.stages ?? []);
+        this.data.set('artifacts', res.artifacts ?? []);
+        this.data.set('facts', res.facts ?? []);
+        this.data.set('conditions', res.conditions ?? []);
+        this.data.set('actors', res.actors ?? []);
+        this.data.set('actions', res.actions ?? []);
+        this.data.set('triggers', res.triggers ?? []);
+        this.data.set('events', res.events ?? []);
+        this.data.set('scenarios', res.scenarios ?? []);
+        this.data.set('eventTriggerLinks', res.eventTriggerLinks ?? []);
+        this.search();
+      },
+      error: (err: any) => {
+        this.error = (err?.message ?? 'خطا در ارتباط با API');
+      },
+    });
   }
 
   search()

@@ -1,33 +1,35 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { forkJoin } from 'rxjs';
 
-import { CatalogStoreService } from '../../core/catalog-store.service';
-import
-  {
-    ActionDefinition,
-    Condition,
-    EventDefinition,
-    Scenario,
-    Stage,
-    TriggerDefinition,
-  } from '../../core/types';
+import {
+  ActionDefinition,
+  Condition,
+  EventDefinition,
+  Scenario,
+  ScenarioActionRef,
+  ScenarioDecision,
+  Stage,
+  TriggerDefinition,
+} from '../../core/types';
 
-import { SmartSelectComponent, SmartOption } from '../../shared/smart-select/smart-select.component';
+import { ActionApiService } from '../../core/api/action-api.service';
+import { ConditionApiService } from '../../core/api/condition-api.service';
+import { EventApiService } from '../../core/api/event-api.service';
+import { ScenarioApiService } from '../../core/api/scenario-api.service';
+import { StageApiService } from '../../core/api/stage-api.service';
+import { TriggerApiService } from '../../core/api/trigger-api.service';
+
 import { RefMultiSelectComponent, RefOption } from '../../shared/ref-multi-select/ref-multi-select.component';
+import { SmartSelectComponent, SmartOption } from '../../shared/smart-select/smart-select.component';
 
-const COL_STAGES = 'stages';
-const COL_TRIGGERS = 'triggers';
-const COL_EVENTS = 'events';
-const COL_CONDS = 'conditions';
-const COL_ACTIONS = 'actions';
-const COL_SCENARIOS = 'scenarios';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
-
-type DecisionAny = any;
+// We keep a flexible edit type because UI sometimes augments the Scenario
+// shape (e.g., ensuring arrays exist).
+type ScenarioEdit = Scenario & {
+  stageId: number | null;
+  triggerId?: number | null;
+  [key: string]: any;
+};
 
 @Component({
   selector: 'app-scenarios',
@@ -36,181 +38,296 @@ type DecisionAny = any;
   templateUrl: './scenarios.component.html',
   styleUrls: ['./scenarios.component.scss'],
 })
-export class ScenariosComponent
-{
+export class ScenariosComponent implements OnInit {
+  rows: Scenario[] = [];
+
   stages: Stage[] = [];
   triggers: TriggerDefinition[] = [];
   events: EventDefinition[] = [];
   conditions: Condition[] = [];
-  actionsCatalog: ActionDefinition[] = [];
+  actions: ActionDefinition[] = [];
 
-  rows: Scenario[] = [];
-
-  editingId: string | null = null;
-  edit: Scenario | null = null;
-
-  // options for pickers
   stageOptions: SmartOption[] = [];
   triggerOptions: SmartOption[] = [];
+  actionOptions: { id: number; text: string; sub?: string }[] = [];
+
   condOptions: RefOption[] = [];
   eventOptions: RefOption[] = [];
-  actionOptions: SmartOption[] = [];
 
-  uiActionKeys: string[] = []; // برای dropdown تصمیم‌ها
+  uiActionKeys: string[] = [];
 
-  constructor(private store: CatalogStoreService)
-  {
+  q = '';
+  error: string | null = null;
+
+  editingId: number | null = null;
+  edit: ScenarioEdit | null = null;
+
+  scenarioPreconditionIds: number[] = [];
+  scenarioProducedEventIds: number[] = [];
+
+  constructor(
+    private scenariosApi: ScenarioApiService,
+    private stagesApi: StageApiService,
+    private triggersApi: TriggerApiService,
+    private eventsApi: EventApiService,
+    private conditionsApi: ConditionApiService,
+    private actionsApi: ActionApiService,
+  ) {}
+
+  ngOnInit(): void {
     this.reload();
   }
 
-  reload()
-  {
-    this.stages = this.store.list<Stage>(COL_STAGES);
-    this.triggers = this.store.list<TriggerDefinition>(COL_TRIGGERS);
-    this.events = this.store.list<EventDefinition>(COL_EVENTS);
-    this.conditions = this.store.list<Condition>(COL_CONDS);
-    this.actionsCatalog = this.store.list<ActionDefinition>(COL_ACTIONS);
+  reload() {
+    this.error = null;
 
-    this.rows = this.store.list<Scenario>(COL_SCENARIOS);
+    forkJoin({
+      scenarios: this.scenariosApi.list(),
+      stages: this.stagesApi.list(),
+      triggers: this.triggersApi.list(),
+      events: this.eventsApi.list(),
+      conditions: this.conditionsApi.list(),
+      actions: this.actionsApi.list(),
+    }).subscribe({
+      next: (res) => {
+        this.rows = (res.scenarios ?? []) as Scenario[];
+        this.stages = res.stages ?? [];
+        this.triggers = res.triggers ?? [];
+        this.events = res.events ?? [];
+        this.conditions = res.conditions ?? [];
+        this.actions = res.actions ?? [];
 
-    this.buildOptions();
-    this.buildUiActionKeys();
+        this.rebuildOptions();
+        this.uiActionKeys = this.collectUiActionKeys();
+
+        if (this.editingId != null) {
+          const stillThere = this.rows.find((x) => x.id === this.editingId);
+          if (!stillThere) this.cancelEdit();
+        }
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
   }
 
-  private buildOptions()
-  {
-    this.stageOptions = this.stages.map(s => ({ id: s.id, text: s.stageKey, sub: s.titleFa }));
-    this.triggerOptions = this.triggers.map(t => ({ id: t.id, text: t.triggerKey, sub: t.titleFa }));
-    this.condOptions = this.conditions.map(c => ({ id: c.id, text: c.conditionKey, sub: c.titleFa }));
-    this.eventOptions = this.events.map(e => ({ id: e.id, text: e.eventKey, sub: e.titleFa }));
-    this.actionOptions = this.actionsCatalog.map(a => ({ id: a.id, text: a.actionKey, sub: a.titleFa }));
+  private rebuildOptions() {
+    this.stageOptions = (this.stages ?? []).map((s) => ({
+      id: s.id,
+      text: s.stageKey,
+      sub: s.titleFa ?? '',
+    }));
+
+    this.triggerOptions = (this.triggers ?? []).map((t) => ({
+      id: t.id,
+      text: t.triggerKey,
+      sub: t.titleFa ?? '',
+    }));
+
+    this.eventOptions = (this.events ?? []).map((e) => ({
+      id: e.id,
+      text: e.eventKey,
+      sub: e.titleFa ?? '',
+    }));
+
+    this.condOptions = (this.conditions ?? []).map((c) => ({
+      id: c.id,
+      text: c.conditionKey,
+      sub: c.titleFa ?? '',
+    }));
+
+    this.actionOptions = (this.actions ?? []).map((a) => ({
+      id: a.id,
+      text: a.actionKey,
+      sub: a.titleFa ?? '',
+    }));
   }
 
-  private buildUiActionKeys()
-  {
+  private collectUiActionKeys(): string[] {
     const set = new Set<string>();
-
-    // از decisionهای قبلی جمع کن
-    for (const s of this.rows as any[])
-    {
-      const decs: any[] = s?.decisions ?? [];
-      for (const d of decs)
-      {
+    for (const s of this.rows ?? []) {
+      for (const d of (s.decisions ?? []) as any[]) {
         const k = (d?.uiActionKey ?? '').trim();
         if (k) set.add(k);
       }
     }
-
-    // چند کلید پیشنهادی رایج (اختیاری)
-    ['IncomeApprove', 'IncomeReject', 'StartActivity', 'Close', 'Submit', 'Back'].forEach(x => set.add(x));
-
-    this.uiActionKeys = [...set].sort((a, b) => a.localeCompare(b));
-  }
-  //-----------------------------------
-  // Scenario-level produced events
-  get scenarioProducedEventIds(): string[]
-  {
-    return (this.edit as any)?.producedEventIds ?? [];
-  }
-  set scenarioProducedEventIds(v: string[])
-  {
-    if (!this.edit) return;
-    (this.edit as any).producedEventIds = v ?? [];
+    return [...set].sort((a, b) => a.localeCompare(b));
   }
 
-  // Scenario-level preconditions (اگر لازم داری مشابهش)
-  get scenarioPreconditionIds(): string[]
-  {
-    return (this.edit as any)?.preconditionIds ?? [];
-  } 
-  
-
-  set scenarioPreconditionIds(v: string[])
-  {
-    if (!this.edit) return;
-    (this.edit as any).preconditionIds = v ?? [];
+  get filtered(): Scenario[] {
+    const q = (this.q ?? '').trim().toLowerCase();
+    if (!q) return this.rows;
+    return (this.rows ?? []).filter((r) => {
+      const s = `${r.scenarioKey} ${(r.titleFa ?? '')} ${(r.ownerSubdomain ?? '')}`.toLowerCase();
+      return s.includes(q);
+    });
   }
 
-  // ---------- CRUD scenario ----------
-  addScenario()
-  {
-    const s: Scenario = {
-      id: uid(),
+  stageTitle(stageId: number | null | undefined): string {
+    if (!stageId) return '—';
+    const s = (this.stages ?? []).find((x) => x.id === stageId);
+    return s ? `${s.stageKey}${s.titleFa ? ' — ' + s.titleFa : ''}` : '—';
+  }
+
+  addScenario() {
+    this.error = null;
+
+    const firstStageId = this.stages?.[0]?.id ?? null;
+    if (!firstStageId) {
+      this.error = 'حداقل یک Stage لازم است.';
+      return;
+    }
+
+    const payload: Omit<Scenario, 'id'> = {
       scenarioKey: 'NEW_SCENARIO',
+      stageId: firstStageId,
       titleFa: 'سناریوی جدید',
       description: '',
-      stageId: this.stages[0]?.id ?? '',
-      ownerSubdomain: 'Case',
-      triggerId: this.triggers[0]?.id ?? '',
+      ownerSubdomain: '',
+      triggerId: undefined,
       preconditionIds: [],
+      producedEventIds: [],
       actions: [],
       factChanges: [],
-      producedEventIds: [],
       decisions: [],
     };
-    this.rows = [s, ...this.rows];
-    this.store.save(COL_SCENARIOS, this.rows);
-    this.editRow(s.id);
+
+    this.scenariosApi.create(payload).subscribe({
+      next: (created) => {
+        this.rows = [created, ...this.rows];
+        this.editRow(created.id);
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ایجاد';
+      },
+    });
   }
 
-  editRow(id: string)
-  {
+  editRow(id: number) {
     this.editingId = id;
-    const src = this.rows.find(x => x.id === id);
-    this.edit = src ? structuredClone(src as any) : null;
-
-    // ensure defaults
-    if (this.edit)
-    {
-      (this.edit as any).preconditionIds ??= [];
-      (this.edit as any).actions ??= [];
-      (this.edit as any).factChanges ??= [];
-      (this.edit as any).producedEventIds ??= [];
-      (this.edit as any).decisions ??= [];
+    const src = this.rows.find((x) => x.id === id);
+    if (!src) {
+      this.edit = null;
+      return;
     }
+
+    const clone = structuredClone(src) as any;
+
+    this.edit = {
+      id: clone.id,
+      scenarioKey: clone.scenarioKey,
+      titleFa: clone.titleFa,
+      description: clone.description,
+      ownerSubdomain: clone.ownerSubdomain,
+      stageId: clone.stageId ?? null,
+      triggerId: clone.triggerId ?? null,
+      preconditionIds: clone.preconditionIds ?? [],
+      producedEventIds: clone.producedEventIds ?? [],
+      actions: clone.actions ?? [],
+      factChanges: clone.factChanges ?? [],
+      decisions: clone.decisions ?? [],
+    };
+
+    const e = this.edit;
+    if (!e) return;
+
+    this.scenarioPreconditionIds = [...(e.preconditionIds ?? [])];
+    this.scenarioProducedEventIds = [...(e.producedEventIds ?? [])];
   }
 
-  cancelEdit()
-  {
+  cancelEdit() {
     this.editingId = null;
     this.edit = null;
+    this.scenarioPreconditionIds = [];
+    this.scenarioProducedEventIds = [];
   }
 
-  saveEdit()
-  {
+  saveEdit() {
     if (!this.edit) return;
 
-    // minimal sanitize: keep ids arrays not null
-    (this.edit as any).preconditionIds ??= [];
-    (this.edit as any).actions ??= [];
-    (this.edit as any).factChanges ??= [];
-    (this.edit as any).producedEventIds ??= [];
-    (this.edit as any).decisions ??= [];
+    this.error = null;
 
-    const idx = this.rows.findIndex(x => x.id === this.edit!.id);
-    if (idx >= 0)
-    {
-      this.rows[idx] = this.edit!;
-      this.store.save(COL_SCENARIOS, this.rows);
-      this.buildUiActionKeys();
+    // sync arrays from UI
+    this.edit.preconditionIds = [...(this.scenarioPreconditionIds ?? [])];
+    this.edit.producedEventIds = [...(this.scenarioProducedEventIds ?? [])];
+
+    // sanitize
+    this.edit.scenarioKey = (this.edit.scenarioKey ?? '').trim();
+    this.edit.titleFa = (this.edit.titleFa ?? '').trim() || undefined;
+    this.edit.description = (this.edit.description ?? '').trim() || undefined;
+    this.edit.ownerSubdomain = (this.edit.ownerSubdomain ?? '').trim() || undefined;
+
+    if (!this.edit.scenarioKey) {
+      this.error = 'Scenario Key الزامی است.';
+      return;
     }
+    if (this.edit.stageId == null) {
+      this.error = 'Stage الزامی است.';
+      return;
+    }
+
+    if (this.edit.triggerId == null) this.edit.triggerId = undefined;
+
+    // ensure decisions shape
+    for (const d of (this.edit.decisions ?? [])) {
+      d.decisionKey = (d.decisionKey ?? '').trim();
+      d.titleFa = (d.titleFa ?? '').trim() || undefined;
+      d.uiActionKey = (d.uiActionKey ?? '').trim() || undefined;
+      d.conditionIds = d.conditionIds ?? [];
+      d.actions = (d.actions ?? []) as ScenarioActionRef[];
+      (d as any).factChanges = (d as any).factChanges ?? [];
+      d.producedEventIds = d.producedEventIds ?? [];
+    }
+
+    const id = this.edit.id;
+
+    const payload: Omit<Scenario, 'id'> = {
+      scenarioKey: this.edit.scenarioKey,
+      titleFa: this.edit.titleFa,
+      description: this.edit.description,
+      ownerSubdomain: this.edit.ownerSubdomain,
+      stageId: this.edit.stageId,
+      triggerId: this.edit.triggerId ?? undefined,
+      preconditionIds: this.edit.preconditionIds ?? [],
+      producedEventIds: this.edit.producedEventIds ?? [],
+      actions: (this.edit as any).actions ?? [],
+      factChanges: (this.edit as any).factChanges ?? [],
+      decisions: (this.edit.decisions ?? []) as any,
+    };
+
+    this.scenariosApi.update(id, payload).subscribe({
+      next: (updated) => {
+        const idx = this.rows.findIndex((x) => x.id === id);
+        if (idx >= 0) this.rows[idx] = updated;
+        this.cancelEdit();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ویرایش';
+      },
+    });
   }
 
-  removeScenario(id: string)
-  {
-    this.rows = this.rows.filter(x => x.id !== id);
-    this.store.save(COL_SCENARIOS, this.rows);
-    if (this.editingId === id) this.cancelEdit();
+  removeScenario(id: number) {
+    this.error = null;
+    this.scenariosApi.delete(id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter((x) => x.id !== id);
+        if (this.editingId === id) this.cancelEdit();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در حذف';
+      },
+    });
   }
 
-  // ---------- Decisions ----------
-  addDecision()
-  {
+  // ===== Decisions =====
+
+  addDecision() {
     if (!this.edit) return;
 
-    const d: DecisionAny = {
-      id: uid(),
-      decisionKey: 'DECISION_NEW',
+    const d: ScenarioDecision = {
+      id: Date.now(),
+      decisionKey: 'NEW_DECISION',
       titleFa: '',
       uiActionKey: '',
       conditionIds: [],
@@ -219,42 +336,29 @@ export class ScenariosComponent
       producedEventIds: [],
     };
 
-    (this.edit as any).decisions = [d, ...((this.edit as any).decisions ?? [])];
+    this.edit.decisions = [d, ...(this.edit.decisions ?? [])];
+    this.uiActionKeys = this.collectUiActionKeys();
   }
 
-  removeDecision(decisionId: string)
-  {
+  removeDecision(decisionId: number) {
     if (!this.edit) return;
-    (this.edit as any).decisions = ((this.edit as any).decisions ?? []).filter((x: any) => x.id !== decisionId);
+    this.edit.decisions = (this.edit.decisions ?? []).filter((d) => d.id !== decisionId);
+    this.uiActionKeys = this.collectUiActionKeys();
   }
 
-  setDecisionUiActionKey(d: any, v: string)
-  {
-    d.uiActionKey = v;
-    if (v && !this.uiActionKeys.includes(v))
-    {
-      this.uiActionKeys = [...this.uiActionKeys, v].sort((a, b) => a.localeCompare(b));
-    }
+  setDecisionUiActionKey(d: ScenarioDecision, value: string) {
+    d.uiActionKey = (value ?? '').trim();
+    this.uiActionKeys = this.collectUiActionKeys();
   }
 
-  // ---------- Decision actions ----------
-  addDecisionAction(d: any, actionId: string)
-  {
+  addDecisionAction(d: ScenarioDecision, actionId: number) {
     if (!actionId) return;
-    d.actions ??= [];
+    d.actions = d.actions ?? [];
     d.actions.push({ actionId, paramsJson: '' });
   }
 
-  removeDecisionAction(d: any, idx: number)
-  {
-    d.actions ??= [];
-    d.actions.splice(idx, 1);
-  }
-
-  // labels
-  stageTitle(id: string)
-  {
-    const s = this.stages.find(x => x.id === id);
-    return s ? `${s.stageKey} — ${s.titleFa}` : '—';
+  removeDecisionAction(d: ScenarioDecision, index: number) {
+    d.actions = d.actions ?? [];
+    d.actions.splice(index, 1);
   }
 }

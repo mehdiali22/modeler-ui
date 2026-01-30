@@ -78,7 +78,7 @@
             <div class="lbl">Stage</div>
             <app-smart-select [options]="stageOptions"
                               [value]="edit.stageId"
-                              (valueChange)="edit.stageId = $event">
+                              (valueChange)="edit.stageId = ($event ?? edit.stageId)">
             </app-smart-select>
           </div>
         </div>
@@ -87,8 +87,8 @@
           <div>
             <div class="lbl">Trigger</div>
             <app-smart-select [options]="triggerOptions"
-                              [value]="edit.triggerId || ''"
-                              (valueChange)="edit.triggerId = $event">
+                              [value]="edit.triggerId ?? null"
+                              (valueChange)="edit.triggerId = ($event ?? undefined)">
             </app-smart-select>
           </div>
 
@@ -180,7 +180,7 @@
                 </option>
               </select>
 
-              <button class="btn sm" (click)="addDecisionAction(d, selAct.value); selAct.value=''">Add</button>
+              <button class="btn sm" (click)="addDecisionAction(d, +selAct.value); selAct.value=''">Add</button>
             </div>
 
             <div class="act" *ngFor="let ar of (d.actions || []); let i = index">

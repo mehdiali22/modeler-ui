@@ -67,85 +67,85 @@ export class SeedComponent
 
     // --- IDs (fixed for references) ---
     // Processes
-    const P_MAIN = 'p_main';
+    const P_MAIN = 1;
 
     // Stages
-    const ST_INTAKE = 'st_intake';
-    const ST_INCOME = 'st_income';
-    const ST_DIST = 'st_dist';
-    const ST_CLIN = 'st_clin';
-    const ST_DRUG = 'st_drug';
-    const ST_FINAL = 'st_final';
-    const ST_MANAGER = 'st_manager';
+    const ST_INTAKE = 10;
+    const ST_INCOME = 11;
+    const ST_DIST = 12;
+    const ST_CLIN = 13;
+    const ST_DRUG = 14;
+    const ST_FINAL = 15;
+    const ST_MANAGER = 16;
 
     // Artifacts
-    const A_CASE = 'a_case';
-    const A_KSR = 'a_ksr';
-    const A_MONTH = 'a_month';
+    const A_CASE = 100;
+    const A_KSR = 101;
+    const A_MONTH = 102;
 
     // Facts
-    const F_CASE_STATUS = 'f_case_status';
-    const F_CASE_LOCKED = 'f_case_locked';
-    const F_HAS_CLIN = 'f_has_clin';
-    const F_HAS_DRUG = 'f_has_drug';
-    const F_CLIN_DONE = 'f_clin_done';
-    const F_DRUG_DONE = 'f_drug_done';
-    const F_FINAL_DONE = 'f_final_done';
-    const F_KSR_GATE = 'f_ksr_gate';
-    const F_TOTALS_OK = 'f_totals_ok';
-    const F_MONTH_CLOSED = 'f_month_closed';
+    const F_CASE_STATUS = 200;
+    const F_CASE_LOCKED = 201;
+    const F_HAS_CLIN = 202;
+    const F_HAS_DRUG = 203;
+    const F_CLIN_DONE = 204;
+    const F_DRUG_DONE = 205;
+    const F_FINAL_DONE = 206;
+    const F_KSR_GATE = 207;
+    const F_TOTALS_OK = 208;
+    const F_MONTH_CLOSED = 209;
 
     // Conditions
-    const C_CAN_START = 'c_can_start';
-    const C_CAN_APPROVE_INCOME = 'c_can_income_approve';
-    const C_NEED_DIST = 'c_need_dist';
-    const C_CLIN_REQUIRED = 'c_clin_required';
-    const C_DRUG_REQUIRED = 'c_drug_required';
-    const C_READY_FINAL = 'c_ready_final';
-    const C_READY_MANAGER = 'c_ready_manager';
+    const C_CAN_START = 300;
+    const C_CAN_APPROVE_INCOME = 301;
+    const C_NEED_DIST = 302;
+    const C_CLIN_REQUIRED = 303;
+    const C_DRUG_REQUIRED = 304;
+    const C_READY_FINAL = 305;
+    const C_READY_MANAGER = 306;
 
     // Actors
-    const ACT_SYSTEM = 'act_system';
-    const ACT_INCOME = 'act_income';
-    const ACT_DISTR = 'act_distributor';
-    const ACT_CLIN = 'act_clin';
-    const ACT_DRUG = 'act_drug';
-    const ACT_FINAL = 'act_final';
-    const ACT_MANAGER = 'act_manager';
+    const ACT_SYSTEM = 400;
+    const ACT_INCOME = 401;
+    const ACT_DISTR = 402;
+    const ACT_CLIN = 403;
+    const ACT_DRUG = 404;
+    const ACT_FINAL = 405;
+    const ACT_MANAGER = 406;
 
     // Actions
-    const AC_IMPORT_XML = 'ac_import_xml';
-    const AC_CALC_AUTO_KSR = 'ac_calc_auto_ksr';
-    const AC_START_ACTIVITY = 'ac_start_activity';
-    const AC_INCOME_APPROVE = 'ac_income_approve';
-    const AC_INCOME_REJECT = 'ac_income_reject';
-    const AC_ASSIGN_REVIEWERS = 'ac_assign_reviewers';
-    const AC_CLOSE_CLIN = 'ac_close_clin';
-    const AC_CLOSE_DRUG = 'ac_close_drug';
-    const AC_CLOSE_FINAL = 'ac_close_final';
-    const AC_CLOSE_MONTH = 'ac_close_month';
+    const AC_IMPORT_XML = 450;
+    const AC_CALC_AUTO_KSR = 451;
+    const AC_START_ACTIVITY = 452;
+    const AC_INCOME_APPROVE = 453;
+    const AC_INCOME_REJECT = 454;
+    const AC_ASSIGN_REVIEWERS = 455;
+    const AC_CLOSE_CLIN = 456;
+    const AC_CLOSE_DRUG = 457;
+    const AC_CLOSE_FINAL = 458;
+    const AC_CLOSE_MONTH = 459;
 
     // Triggers
-    const TR_XML_RECEIVED = 'tr_xml_received';
-    const TR_INCOME_START = 'tr_income_start';
-    const TR_INCOME_DECISION = 'tr_income_decision';
-    const TR_DISTRIBUTE = 'tr_distribute';
-    const TR_CLIN_CLOSE = 'tr_clin_close';
-    const TR_DRUG_CLOSE = 'tr_drug_close';
-    const TR_FINAL_CLOSE = 'tr_final_close';
-    const TR_MANAGER_CLOSE_MONTH = 'tr_manager_close_month';
+    const TR_XML_RECEIVED = 500;
+    const TR_INCOME_START = 501;
+    const TR_INCOME_DECISION = 502;
+    const TR_DISTRIBUTE = 503;
+    const TR_CLIN_CLOSE = 504;
+    const TR_DRUG_CLOSE = 505;
+    const TR_FINAL_CLOSE = 506;
+    const TR_MANAGER_CLOSE_MONTH = 507;
 
     // Events
-    const EV_IMPORTED = 'ev_imported';
-    const EV_READY_FOR_INCOME = 'ev_ready_for_income';
-    const EV_ACTIVITY_STARTED = 'ev_activity_started';
-    const EV_INCOME_APPROVED = 'ev_income_approved';
-    const EV_INCOME_REJECTED = 'ev_income_rejected';
-    const EV_DISTRIBUTED = 'ev_distributed';
-    const EV_CLIN_CLOSED = 'ev_clin_closed';
-    const EV_DRUG_CLOSED = 'ev_drug_closed';
-    const EV_FINAL_CLOSED = 'ev_final_closed';
-    const EV_MONTH_CLOSED = 'ev_month_closed';
+    const EV_IMPORTED = 550;
+    const EV_READY_FOR_INCOME = 551;
+    const EV_ACTIVITY_STARTED = 552;
+    const EV_INCOME_APPROVED = 553;
+    const EV_INCOME_REJECTED = 554;
+    const EV_DISTRIBUTED = 555;
+    const EV_CLIN_CLOSED = 556;
+    const EV_DRUG_CLOSED = 557;
+    const EV_FINAL_CLOSED = 558;
+    const EV_MONTH_CLOSED = 559;
 
     // --- seed payloads ---
     const processes: Process[] = [
@@ -360,18 +360,18 @@ export class SeedComponent
 
     // Event → Trigger links (زنجیره‌سازی ساده)
     const links: EventTriggerLink[] = [
-      { id: 'l1', eventId: EV_READY_FOR_INCOME, triggerId: TR_INCOME_START },
-      { id: 'l2', eventId: EV_ACTIVITY_STARTED, triggerId: TR_INCOME_DECISION },
-      { id: 'l3', eventId: EV_INCOME_APPROVED, triggerId: TR_DISTRIBUTE },
-      { id: 'l4', eventId: EV_DISTRIBUTED, triggerId: TR_CLIN_CLOSE }, // در عمل می‌تونه هم دارویی هم بالینی
-      { id: 'l5', eventId: EV_CLIN_CLOSED, triggerId: TR_DRUG_CLOSE },
-      { id: 'l6', eventId: EV_DRUG_CLOSED, triggerId: TR_FINAL_CLOSE },
-      { id: 'l7', eventId: EV_FINAL_CLOSED, triggerId: TR_MANAGER_CLOSE_MONTH },
+      { id: 800, eventId: EV_READY_FOR_INCOME, triggerId: TR_INCOME_START },
+      { id: 801, eventId: EV_ACTIVITY_STARTED, triggerId: TR_INCOME_DECISION },
+      { id: 802, eventId: EV_INCOME_APPROVED, triggerId: TR_DISTRIBUTE },
+      { id: 803, eventId: EV_DISTRIBUTED, triggerId: TR_CLIN_CLOSE }, // در عمل می‌تونه هم دارویی هم بالینی
+      { id: 804, eventId: EV_CLIN_CLOSED, triggerId: TR_DRUG_CLOSE },
+      { id: 805, eventId: EV_DRUG_CLOSED, triggerId: TR_FINAL_CLOSE },
+      { id: 806, eventId: EV_FINAL_CLOSED, triggerId: TR_MANAGER_CLOSE_MONTH },
     ];
 
     const scenarios: Scenario[] = [
       {
-        id: 's1',
+        id: 600,
         scenarioKey: 'CASE_S_ImportAndAutoKsr',
         titleFa: 'پارس XML و محاسبه کسور اتومات',
         stageId: ST_INTAKE,
@@ -391,7 +391,7 @@ export class SeedComponent
         producedEventIds: [EV_IMPORTED, EV_READY_FOR_INCOME],
       },
       {
-        id: 's2',
+        id: 601,
         scenarioKey: 'CASE_S_IncomeStartActivity',
         titleFa: 'درآمد: شروع فعالیت',
         stageId: ST_INCOME,
@@ -405,7 +405,7 @@ export class SeedComponent
 
       // ✅ تبدیل s3 به Decision-based + uiActionKey
       {
-        id: 's3',
+        id: 602,
         scenarioKey: 'CASE_S_IncomeDecision',
         titleFa: 'درآمد: تصمیم (تایید / ابطال)',
         stageId: ST_INCOME,
@@ -418,7 +418,7 @@ export class SeedComponent
         producedEventIds: [],
         decisions: [
           {
-            id: 'd_income_approve',
+            id: 700,
             decisionKey: 'Approve',
             titleFa: 'تایید',
             uiActionKey: 'BTN_APPROVE',
@@ -431,7 +431,7 @@ export class SeedComponent
             producedEventIds: [EV_INCOME_APPROVED],
           },
           {
-            id: 'd_income_reject',
+            id: 701,
             decisionKey: 'Reject',
             titleFa: 'ابطال/عدم تایید',
             uiActionKey: 'BTN_REJECT',
@@ -447,7 +447,7 @@ export class SeedComponent
       },
 
       {
-        id: 's4',
+        id: 603,
         scenarioKey: 'CASE_S_Distribute',
         titleFa: 'توزیع پرونده به رسیدگی‌کننده‌ها',
         stageId: ST_DIST,
@@ -459,7 +459,7 @@ export class SeedComponent
         producedEventIds: [EV_DISTRIBUTED],
       },
       {
-        id: 's5',
+        id: 604,
         scenarioKey: 'CASE_S_CloseClinical',
         titleFa: 'بستن رسیدگی بالینی',
         stageId: ST_CLIN,
@@ -471,7 +471,7 @@ export class SeedComponent
         producedEventIds: [EV_CLIN_CLOSED],
       },
       {
-        id: 's6',
+        id: 605,
         scenarioKey: 'CASE_S_CloseDrug',
         titleFa: 'بستن رسیدگی دارویی',
         stageId: ST_DRUG,
@@ -483,7 +483,7 @@ export class SeedComponent
         producedEventIds: [EV_DRUG_CLOSED],
       },
       {
-        id: 's7',
+        id: 606,
         scenarioKey: 'CASE_S_CloseFinal',
         titleFa: 'بستن رسیدگی نهایی',
         stageId: ST_FINAL,
@@ -495,7 +495,7 @@ export class SeedComponent
         producedEventIds: [EV_FINAL_CLOSED],
       },
       {
-        id: 's8',
+        id: 607,
         scenarioKey: 'SETTLEMENT_S_ManagerCloseMonth',
         titleFa: 'مدیر بیمارستان: بستن ماه عملکرد',
         stageId: ST_MANAGER,

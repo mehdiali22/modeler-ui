@@ -1,18 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+
+import { forkJoin } from 'rxjs';
+
 import { Artifact, Fact, FactValueType } from '../../../core/types';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
-
-const COL_FACTS = 'facts';
-const COL_ARTIFACTS = 'artifacts';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
+import { ArtifactApiService } from '../../../core/api/artifact-api.service';
+import { FactApiService } from '../../../core/api/fact-api.service';
 
 type FactDraft = {
-  artifactId: string;
+  artifactId: number;
   factKey: string;
   valueType: FactValueType;
   meaning: string;
@@ -25,11 +21,12 @@ type FactDraft = {
   templateUrl: './facts.component.html',
   styleUrls: ['./facts.component.scss'],
 })
-export class FactsComponent
-{
+export class FactsComponent implements OnInit {
   artifacts: Artifact[] = [];
   rows: Fact[] = [];
-  editingId: string | null = null;
+
+  editingId: number | null = null;
+  error: string | null = null;
 
   valueTypes = [
     { id: FactValueType.String, title: 'String' },
@@ -42,40 +39,52 @@ export class FactsComponent
   ];
 
   draft: FactDraft = this.newDraft();
-  error: string | null = null;
 
-  constructor(private store: CatalogStoreService)
-  {
-    this.artifacts = this.store.list<Artifact>(COL_ARTIFACTS);
-    this.rows = this.store.list<Fact>(COL_FACTS);
+  constructor(private factsApi: FactApiService, private artifactsApi: ArtifactApiService) {}
 
-    // default artifact
-    if (this.artifacts.length)
-    {
-      this.draft.artifactId = this.artifacts[0].id;
-    }
+  ngOnInit(): void {
+    this.load();
   }
 
-  private newDraft(): FactDraft
-  {
+  private newDraft(): FactDraft {
     return {
-      artifactId: '',
+      artifactId: 0,
       factKey: '',
       valueType: FactValueType.String,
       meaning: '',
     };
   }
 
-  reset()
-  {
+  load() {
+    this.error = null;
+    forkJoin({
+      artifacts: this.artifactsApi.list(),
+      facts: this.factsApi.list(),
+    }).subscribe({
+      next: (res) => {
+        this.artifacts = res.artifacts ?? [];
+        this.rows = res.facts ?? [];
+        this.reset();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در ارتباط با API';
+      },
+    });
+  }
+
+  get filtered(): Fact[] {
+    // اگر تو HTML search داری، اینجا وصلش کن. فعلاً همون rows.
+    return this.rows;
+  }
+
+  reset() {
     this.editingId = null;
     this.error = null;
     this.draft = this.newDraft();
     if (this.artifacts.length) this.draft.artifactId = this.artifacts[0].id;
   }
 
-  edit(r: Fact)
-  {
+  edit(r: Fact) {
     this.editingId = r.id;
     this.error = null;
     this.draft = {
@@ -86,73 +95,69 @@ export class FactsComponent
     };
   }
 
-  remove(r: Fact)
-  {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL_FACTS, this.rows);
-    if (this.editingId === r.id) this.reset();
+  remove(r: Fact) {
+    this.error = null;
+    this.factsApi.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter((x) => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: (err: any) => {
+        this.error = err?.message ?? 'خطا در حذف';
+      },
+    });
   }
 
-  submit()
-  {
+  submit() {
     this.error = null;
 
-    const payload: Omit<Fact, 'id'> = {
-      artifactId: this.draft.artifactId,
-      factKey: (this.draft.factKey || '').trim(),
-      valueType: this.draft.valueType,
-      meaning: (this.draft.meaning || '').trim() || undefined,
-    };
-
-    if (!payload.artifactId)
-    {
-      this.error = 'Artifact را انتخاب کن.';
+    const artifactId = this.draft.artifactId;
+    const factKey = (this.draft.factKey || '').trim();
+    if (!artifactId) {
+      this.error = 'Artifact اجباری است.';
       return;
     }
-
-    if (!payload.factKey)
-    {
+    if (!factKey) {
       this.error = 'FactKey اجباری است.';
       return;
     }
 
-    // Artifact must exist
-    if (!this.artifacts.some(a => a.id === payload.artifactId))
-    {
-      this.error = 'Artifact انتخاب‌شده معتبر نیست.';
-      return;
-    }
+    const payload: Omit<Fact, 'id'> = {
+      artifactId,
+      factKey,
+      valueType: this.draft.valueType,
+      meaning: (this.draft.meaning || '').trim() || undefined,
+    };
 
-    // Unique FactKey (case-insensitive)
-    const dup = this.rows.find(x =>
-      x.factKey.toLowerCase() === payload.factKey.toLowerCase() &&
-      x.id !== this.editingId
-    );
-    if (dup)
-    {
-      this.error = 'FactKey تکراری است.';
-      return;
+    if (this.editingId !== null) {
+      const id = this.editingId;
+      this.factsApi.update(id, payload).subscribe({
+        next: (updated) => {
+          this.rows = this.rows.map((r) => (r.id === id ? updated : r));
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ویرایش';
+        },
+      });
+    } else {
+      this.factsApi.create(payload).subscribe({
+        next: (created) => {
+          this.rows = [created, ...this.rows];
+          this.reset();
+        },
+        error: (err: any) => {
+          this.error = err?.message ?? 'خطا در ایجاد';
+        },
+      });
     }
-
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
-    }
-
-    this.store.save(COL_FACTS, this.rows);
-    this.reset();
   }
 
-  artifactTitle(artifactId: string): string
-  {
-    return this.artifacts.find(a => a.id === artifactId)?.artifactKey ?? '—';
+  artifactTitle(artifactId: number): string {
+    return this.artifacts.find((a) => a.id === artifactId)?.artifactKey ?? '—';
   }
 
-  valueTypeTitle(vt: FactValueType): string
-  {
-    return this.valueTypes.find(x => x.id === vt)?.title ?? String(vt);
+  valueTypeTitle(vt: FactValueType): string {
+    return this.valueTypes.find((x) => x.id === vt)?.title ?? String(vt);
   }
 }

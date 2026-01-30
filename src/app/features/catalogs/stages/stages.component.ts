@@ -1,18 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
+import { Component, OnInit } from '@angular/core';
 import { Process, Stage } from '../../../core/types';
-
-const COL_STAGES = 'stages';
-const COL_PROCESSES = 'processes';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
-
+import { StageApiService } from '../../../core/api/stage-api.service';
+import { ProcessApiService } from '../../../core/api/process-api.service';
+import { forkJoin } from 'rxjs';
 type StageDraft = {
-  processId: string;
+  processId: number;
   stageKey: string;
   titleFa: string;
   order: string;
@@ -26,30 +19,45 @@ type StageDraft = {
   templateUrl: './stages.component.html',
   styleUrls: ['./stages.component.scss'],
 })
-export class StagesComponent
+export class StagesComponent implements OnInit
 {
   processes: Process[] = [];
   rows: Stage[] = [];
 
-  editingId: string | null = null;
+  editingId: number | null = null;
   error: string | null = null;
 
   draft: StageDraft = this.newDraft();
 
-  constructor(private store: CatalogStoreService)
-  {
-    this.processes = this.store.list<Process>(COL_PROCESSES);
-    this.rows = this.store.list<Stage>(COL_STAGES);
+  constructor(private stagesApi: StageApiService, private processesApi: ProcessApiService) {}
 
-    if (this.processes.length) this.draft.processId = this.processes[0].id;
+
+  ngOnInit(): void
+  {
+    this.load();
   }
 
-  private newDraft(): StageDraft
+load()
+{
+  this.error = null;
+  forkJoin({
+    stages: this.stagesApi.list(),
+    processes: this.processesApi.list(),
+  }).subscribe({
+    next: res =>
+    {
+      this.rows = res.stages ?? [];
+      this.processes = res.processes ?? [];
+    },
+    error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); }
+  });
+}
+private newDraft(): StageDraft
   {
-    return { processId: '', stageKey: '', titleFa: '', order: '', description: '' };
+    return { processId: 0, stageKey: '', titleFa: '', order: '', description: '' };
   }
 
-  processKeyById(id: string): string
+  processKeyById(id: number): string
   {
     return this.processes.find(p => p.id === id)?.processKey ?? '—';
   }
@@ -77,16 +85,21 @@ export class StagesComponent
 
   remove(r: Stage)
   {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL_STAGES, this.rows);
-    if (this.editingId === r.id) this.reset();
+    this.error = null;
+    this.stagesApi.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter(x => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: err => { this.error = (err?.message ?? 'خطا در حذف'); }
+    });
   }
 
   submit()
   {
     this.error = null;
 
-    const processId = (this.draft.processId || '').trim();
+    const processId = this.draft.processId;
     if (!processId) { this.error = 'Process را انتخاب کن.'; return; }
     if (!this.processes.some(p => p.id === processId)) { this.error = 'Process انتخاب‌شده معتبر نیست.'; return; }
 
@@ -101,25 +114,35 @@ export class StagesComponent
     const orderNum = (this.draft.order || '').trim() === '' ? undefined : Number(this.draft.order);
     if (orderNum != null && Number.isNaN(orderNum)) { this.error = 'Order باید عدد باشد.'; return; }
 
-    const payload: Omit<Stage, 'id'> = {
-      processId,
-      stageKey,
-      titleFa: (this.draft.titleFa || '').trim() || undefined,
-      description: (this.draft.description || '').trim() || undefined,
-      order: orderNum,
-    };
+            const payload: Omit<Stage, 'id'> = {
+  processId,
+  stageKey,
+  titleFa: (this.draft.titleFa || '').trim() || undefined,
+  description: (this.draft.description || '').trim() || undefined,
+  order: orderNum,
+};
 
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
-    }
-
-    this.store.save(COL_STAGES, this.rows);
-    this.reset();
-  }
+            if (this.editingId !== null)
+            {
+              const id = this.editingId;
+              this.stagesApi.update(id, payload).subscribe({
+                next: updated => {
+                  this.rows = this.rows.map(r => r.id === id ? updated : r);
+                  this.reset();
+                },
+                error: err => { this.error = (err?.message ?? 'خطا در ویرایش'); }
+              });
+            } else
+            {
+              this.stagesApi.create(payload).subscribe({
+                next: created => {
+                  this.rows = [created, ...this.rows];
+                  this.reset();
+                },
+                error: err => { this.error = (err?.message ?? 'خطا در ایجاد'); }
+              });
+            }
+          }
 
 
 }

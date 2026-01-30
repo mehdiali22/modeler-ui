@@ -1,22 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Condition, Fact } from '../../../core/types';
-import { CatalogStoreService } from '../../../core/catalog-store.service';
-
-const COL_CONDS = 'conditions';
-const COL_FACTS = 'facts';
-
-function uid()
-{
-  return crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
-}
-
+import { ConditionApiService } from '../../../core/api/condition-api.service';
+import { FactApiService } from '../../../core/api/fact-api.service';
+import { forkJoin } from 'rxjs';
 type ConditionDraft = {
   conditionKey: string;
   titleFa: string;
   expression: string;
   failMessage: string;
-  factIdsUsed: string[];
+  factIdsUsed: number[];
 };
 
 @Component({
@@ -26,25 +19,41 @@ type ConditionDraft = {
   templateUrl: './conditions.component.html',
   styleUrls: ['./conditions.component.scss'],
 })
-export class ConditionsComponent
+export class ConditionsComponent implements OnInit
 {
   facts: Fact[] = [];
   rows: Condition[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
 
   draft: ConditionDraft = this.newDraft();
   error: string | null = null;
 
   factFilter = '';
 
-  constructor(private store: CatalogStoreService)
+  constructor(private condsApi: ConditionApiService, private factsApi: FactApiService) {}
+
+
+  ngOnInit(): void
   {
-    // init in constructor ✅
-    this.facts = this.store.list<Fact>(COL_FACTS);
-    this.rows = this.store.list<Condition>(COL_CONDS);
+    this.load();
   }
 
-  private newDraft(): ConditionDraft
+load()
+{
+  this.error = null;
+  forkJoin({
+    conditions: this.condsApi.list(),
+    facts: this.factsApi.list(),
+  }).subscribe({
+    next: res =>
+    {
+      this.rows = res.conditions ?? [];
+      this.facts = res.facts ?? [];
+    },
+    error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); }
+  });
+}
+private newDraft(): ConditionDraft
   {
     return {
       conditionKey: '',
@@ -65,12 +74,12 @@ export class ConditionsComponent
     );
   }
 
-  isFactSelected(factId: string): boolean
+  isFactSelected(factId: number): boolean
   {
     return this.draft.factIdsUsed.includes(factId);
   }
 
-  toggleFact(factId: string)
+  toggleFact(factId: number)
   {
     if (this.isFactSelected(factId))
     {
@@ -105,61 +114,51 @@ export class ConditionsComponent
 
   remove(r: Condition)
   {
-    this.rows = this.rows.filter(x => x.id !== r.id);
-    this.store.save(COL_CONDS, this.rows);
-    if (this.editingId === r.id) this.reset();
+    this.error = null;
+    this.condsApi.delete(r.id).subscribe({
+      next: () => {
+        this.rows = this.rows.filter(x => x.id !== r.id);
+        if (this.editingId === r.id) this.reset();
+      },
+      error: err => { this.error = (err?.message ?? 'خطا در حذف'); }
+    });
   }
 
   submit()
   {
     this.error = null;
 
-    const payload: Omit<Condition, 'id'> = {
-      conditionKey: (this.draft.conditionKey || '').trim(),
-      titleFa: (this.draft.titleFa || '').trim() || undefined,
-      expression: (this.draft.expression || '').trim(),
-      failMessage: (this.draft.failMessage || '').trim() || undefined,
-      factIdsUsed: [...(this.draft.factIdsUsed ?? [])],
-    };
+            const payload: Omit<Condition, 'id'> = {
+  conditionKey: (this.draft.conditionKey || '').trim(),
+  titleFa: (this.draft.titleFa || '').trim() || undefined,
+  expression: (this.draft.expression || '').trim(),
+  failMessage: (this.draft.failMessage || '').trim() || undefined,
+  factIdsUsed: [...(this.draft.factIdsUsed ?? [])],
+};
 
-    if (!payload.conditionKey)
-    {
-      this.error = 'ConditionKey اجباری است.';
-      return;
-    }
-    if (!payload.expression)
-    {
-      this.error = 'Expression اجباری است.';
-      return;
-    }
+            if (this.editingId !== null)
+            {
+              const id = this.editingId;
+              this.condsApi.update(id, payload).subscribe({
+                next: updated => {
+                  this.rows = this.rows.map(r => r.id === id ? updated : r);
+                  this.reset();
+                },
+                error: err => { this.error = (err?.message ?? 'خطا در ویرایش'); }
+              });
+            } else
+            {
+              this.condsApi.create(payload).subscribe({
+                next: created => {
+                  this.rows = [created, ...this.rows];
+                  this.reset();
+                },
+                error: err => { this.error = (err?.message ?? 'خطا در ایجاد'); }
+              });
+            }
+          }
 
-    // Unique ConditionKey
-    const dup = this.rows.find(x =>
-      x.conditionKey.toLowerCase() === payload.conditionKey.toLowerCase() &&
-      x.id !== this.editingId
-    );
-    if (dup)
-    {
-      this.error = 'ConditionKey تکراری است.';
-      return;
-    }
-
-    // keep only valid fact ids
-    payload.factIdsUsed = payload.factIdsUsed.filter(id => this.facts.some(f => f.id === id));
-
-    if (this.editingId)
-    {
-      this.rows = this.rows.map(r => r.id === this.editingId ? ({ ...r, ...payload }) : r);
-    } else
-    {
-      this.rows = [{ id: uid(), ...payload }, ...this.rows];
-    }
-
-    this.store.save(COL_CONDS, this.rows);
-    this.reset();
-  }
-
-  factsUsedText(ids: string[]): string
+  factsUsedText(ids: number[]): string
   {
     if (!ids?.length) return '—';
     const keys = ids

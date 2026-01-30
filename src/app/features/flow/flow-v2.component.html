@@ -3,12 +3,12 @@
     <div class="title">Flow View v2</div>
 
     <div class="tools">
-      <select class="inp sm" [value]="stageFilter" (change)="stageFilter = $any($event.target).value; build()">
-        <option value="">All stages</option>
+      <select class="inp sm" [value]="stageFilter ?? 0" (change)="stageFilter = (+$any($event.target).value || 0); stageFilter = (stageFilter===0? null : stageFilter); build()">
+        <option value="0">All stages</option>
         <option *ngFor="let s of stages" [value]="s.id">{{ s.stageKey }} — {{ s.titleFa }}</option>
       </select>
 
-      <select class="inp sm" [value]="startTriggerId" (change)="startTriggerId = $any($event.target).value; build()">
+      <select class="inp sm" [value]="startTriggerId ?? 0" (change)="startTriggerId = +$any($event.target).value; build()">
         <option *ngFor="let t of triggers" [value]="t.id">{{ t.triggerKey }} — {{ t.titleFa }}</option>
       </select>
 
