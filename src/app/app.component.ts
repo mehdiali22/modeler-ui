@@ -17,6 +17,7 @@ export class AppComponent
     { label: 'Artifacts', route: '/catalogs/artifacts', icon: '📦' },
     { label: 'Facts', route: '/catalogs/facts', icon: '🧷' },
     { label: 'Actions', route: '/catalogs/actions', icon: '🛠️' },
+    { label: 'Actors', route: '/catalogs/actors', icon: '🛠️' },
     { label: 'Conditions', route: '/catalogs/conditions', icon: '⛳' },
     { label: 'Scenarios', route: '/scenarios', icon: '🎬' },    
     { label: 'Stages', route: '/catalogs/stages', icon: '🧱' }, 

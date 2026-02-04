@@ -59,7 +59,8 @@
               "RelativeToolTip": "src\\app\\core\\api\\api.tokens.ts",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2026-02-04T07:09:22.821Z"
+              "WhenOpened": "2026-02-04T07:09:22.821Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -107,7 +108,8 @@
               "RelativeToolTip": "src\\app\\features\\scenarios\\scenarios.component.ts",
               "ViewState": "AgIAAEUBAAAAAAAAAAAAwGwBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2026-01-29T20:14:39.376Z"
+              "WhenOpened": "2026-01-29T20:14:39.376Z",
+              "EditorCaption": ""
             }
           ]
         }
