@@ -1,13 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\src\\app",
-    "\\src\\app\\core",
-    "\\src\\app\\features\\catalogs",
-    "\\src\\app\\features\\tools",
-    "\\src\\app\\features\\tools\\ui-bindings",
-    "\\src\\app\\features\\tools\\validation",
-    "\\src\\app\\shared"
+    "\\src",
+    "\\src\\app"
   ],
   "SelectedNode": "\\src",
   "PreviewInSolutionExplorer": false
