@@ -6,6 +6,7 @@
       <button class="btn primary" (click)="addScenario()">+ Add Scenario</button>
     </div>
   </div>
+  <div class="alert" *ngIf="error">{{ error }}</div>
 
   <div class="grid">
     <!-- list -->
@@ -18,7 +19,6 @@
             <th>Key</th>
             <th>Stage</th>
             <th>Title</th>
-            <th>Decisions</th>
             <th></th>
           </tr>
         </thead>
@@ -28,7 +28,6 @@
             <td class="mono">{{ r.scenarioKey }}</td>
             <td class="mono">{{ stageTitle(r.stageId) }}</td>
             <td>{{ r.titleFa }}</td>
-            <td class="mono">{{ $any(r).decisions?.length ?? 0 }}</td>
             <td class="right">
               <button class="btn sm" (click)="editRow(r.id)">Edit</button>
               <button class="btn sm danger" (click)="removeScenario(r.id)">Delete</button>
@@ -36,7 +35,7 @@
           </tr>
 
           <tr *ngIf="!rows.length">
-            <td colspan="5" class="muted center">هیچ سناریویی ندارید</td>
+            <td colspan="4" class="muted center">هیچ سناریویی ندارید</td>
           </tr>
         </tbody>
       </table>
@@ -110,89 +109,6 @@
                               [selectedIds]="scenarioProducedEventIds"
                               (selectedIdsChange)="scenarioProducedEventIds = $event">
         </app-ref-multi-select>
-
-        <hr class="hr">
-
-        <div class="dec-head">
-          <div class="lbl big">Decisions</div>
-          <button class="btn sm" (click)="addDecision()">+ Add Decision</button>
-        </div>
-
-        <div class="decision" *ngFor="let d of ($any(edit).decisions || [])">
-          <div class="dec-top">
-            <div class="mono">{{ d.decisionKey }}</div>
-            <button class="btn sm danger" (click)="removeDecision(d.id)">Remove</button>
-          </div>
-
-          <div class="row2">
-            <div>
-              <div class="lbl">Decision Key</div>
-              <input class="inp mono" [value]="d.decisionKey"
-                     (input)="d.decisionKey = $any($event.target).value">
-            </div>
-
-            <div>
-              <div class="lbl">Title (FA)</div>
-              <input class="inp" [value]="d.titleFa || ''"
-                     (input)="d.titleFa = $any($event.target).value">
-            </div>
-          </div>
-
-          <!-- dropdown uiActionKey -->
-          <div class="row2">
-            <div>
-              <div class="lbl">UI Button (uiActionKey)</div>
-              <select class="inp" [value]="d.uiActionKey || ''"
-                      (change)="setDecisionUiActionKey(d, $any($event.target).value)">
-                <option value="">— انتخاب —</option>
-                <option *ngFor="let k of uiActionKeys" [value]="k">{{ k }}</option>
-              </select>
-              <div class="muted hint">اگر کلید جدید می‌خوای، تو همین input تایپ کن:</div>
-              <input class="inp mono" placeholder="یا دستی بنویس..."
-                     [value]="d.uiActionKey || ''"
-                     (input)="setDecisionUiActionKey(d, $any($event.target).value)">
-            </div>
-
-            <div>
-              <app-ref-multi-select label="Decision Conditions"
-                                    [options]="condOptions"
-                                    [selectedIds]="d.conditionIds || []"
-                                    (selectedIdsChange)="d.conditionIds = $event">
-              </app-ref-multi-select>
-            </div>
-          </div>
-
-          <app-ref-multi-select label="Decision Produced Events"
-                                [options]="eventOptions"
-                                [selectedIds]="d.producedEventIds || []"
-                                (selectedIdsChange)="d.producedEventIds = $event">
-          </app-ref-multi-select>
-
-          <!-- Decision Actions -->
-          <div class="act-block">
-            <div class="lbl">Decision Actions</div>
-
-            <div class="row">
-              <select class="inp" #selAct>
-                <option value="">— انتخاب Action —</option>
-                <option *ngFor="let a of actionOptions" [value]="a.id">
-                  {{ a.text }} — {{ a.sub }}
-                </option>
-              </select>
-
-              <button class="btn sm" (click)="addDecisionAction(d, +selAct.value); selAct.value=''">Add</button>
-            </div>
-
-            <div class="act" *ngFor="let ar of (d.actions || []); let i = index">
-              <div class="mono">actionId: {{ ar.actionId }}</div>
-              <input class="inp mono" placeholder="paramsJson"
-                     [value]="ar.paramsJson || ''"
-                     (input)="ar.paramsJson = $any($event.target).value">
-              <button class="btn sm danger" (click)="removeDecisionAction(d, i)">Remove</button>
-            </div>
-          </div>
-
-        </div>
 
       </div>
     </div>

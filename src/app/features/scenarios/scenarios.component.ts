@@ -2,16 +2,15 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import {
-  ActionDefinition,
-  Condition,
-  EventDefinition,
-  Scenario,
-  ScenarioActionRef,
-  ScenarioDecision,
-  Stage,
-  TriggerDefinition,
-} from '../../core/types';
+import
+  {
+    ActionDefinition,
+    Condition,
+    EventDefinition,
+    Scenario,
+    Stage,
+    TriggerDefinition,
+  } from '../../core/types';
 
 import { ActionApiService } from '../../core/api/action-api.service';
 import { ConditionApiService } from '../../core/api/condition-api.service';
@@ -38,7 +37,8 @@ type ScenarioEdit = Scenario & {
   templateUrl: './scenarios.component.html',
   styleUrls: ['./scenarios.component.scss'],
 })
-export class ScenariosComponent implements OnInit {
+export class ScenariosComponent implements OnInit
+{
   rows: Scenario[] = [];
 
   stages: Stage[] = [];
@@ -53,8 +53,6 @@ export class ScenariosComponent implements OnInit {
 
   condOptions: RefOption[] = [];
   eventOptions: RefOption[] = [];
-
-  uiActionKeys: string[] = [];
 
   q = '';
   error: string | null = null;
@@ -72,13 +70,15 @@ export class ScenariosComponent implements OnInit {
     private eventsApi: EventApiService,
     private conditionsApi: ConditionApiService,
     private actionsApi: ActionApiService,
-  ) {}
+  ) { }
 
-  ngOnInit(): void {
+  ngOnInit(): void
+  {
     this.reload();
   }
 
-  reload() {
+  reload()
+  {
     this.error = null;
 
     forkJoin({
@@ -89,7 +89,8 @@ export class ScenariosComponent implements OnInit {
       conditions: this.conditionsApi.list(),
       actions: this.actionsApi.list(),
     }).subscribe({
-      next: (res) => {
+      next: (res) =>
+      {
         this.rows = (res.scenarios ?? []) as Scenario[];
         this.stages = res.stages ?? [];
         this.triggers = res.triggers ?? [];
@@ -98,20 +99,22 @@ export class ScenariosComponent implements OnInit {
         this.actions = res.actions ?? [];
 
         this.rebuildOptions();
-        this.uiActionKeys = this.collectUiActionKeys();
 
-        if (this.editingId != null) {
+        if (this.editingId != null)
+        {
           const stillThere = this.rows.find((x) => x.id === this.editingId);
           if (!stillThere) this.cancelEdit();
         }
       },
-      error: (err: any) => {
+      error: (err: any) =>
+      {
         this.error = err?.message ?? 'خطا در ارتباط با API';
       },
     });
   }
 
-  private rebuildOptions() {
+  private rebuildOptions()
+  {
     this.stageOptions = (this.stages ?? []).map((s) => ({
       id: s.id,
       text: s.stageKey,
@@ -143,37 +146,31 @@ export class ScenariosComponent implements OnInit {
     }));
   }
 
-  private collectUiActionKeys(): string[] {
-    const set = new Set<string>();
-    for (const s of this.rows ?? []) {
-      for (const d of (s.decisions ?? []) as any[]) {
-        const k = (d?.uiActionKey ?? '').trim();
-        if (k) set.add(k);
-      }
-    }
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }
-
-  get filtered(): Scenario[] {
+  get filtered(): Scenario[]
+  {
     const q = (this.q ?? '').trim().toLowerCase();
     if (!q) return this.rows;
-    return (this.rows ?? []).filter((r) => {
+    return (this.rows ?? []).filter((r) =>
+    {
       const s = `${r.scenarioKey} ${(r.titleFa ?? '')} ${(r.ownerSubdomain ?? '')}`.toLowerCase();
       return s.includes(q);
     });
   }
 
-  stageTitle(stageId: number | null | undefined): string {
+  stageTitle(stageId: number | null | undefined): string
+  {
     if (!stageId) return '—';
     const s = (this.stages ?? []).find((x) => x.id === stageId);
     return s ? `${s.stageKey}${s.titleFa ? ' — ' + s.titleFa : ''}` : '—';
   }
 
-  addScenario() {
+  addScenario()
+  {
     this.error = null;
 
     const firstStageId = this.stages?.[0]?.id ?? null;
-    if (!firstStageId) {
+    if (!firstStageId)
+    {
       this.error = 'حداقل یک Stage لازم است.';
       return;
     }
@@ -189,24 +186,27 @@ export class ScenariosComponent implements OnInit {
       producedEventIds: [],
       actions: [],
       factChanges: [],
-      decisions: [],
     };
 
     this.scenariosApi.create(payload).subscribe({
-      next: (created) => {
+      next: (created) =>
+      {
         this.rows = [created, ...this.rows];
         this.editRow(created.id);
       },
-      error: (err: any) => {
+      error: (err: any) =>
+      {
         this.error = err?.message ?? 'خطا در ایجاد';
       },
     });
   }
 
-  editRow(id: number) {
+  editRow(id: number)
+  {
     this.editingId = id;
     const src = this.rows.find((x) => x.id === id);
-    if (!src) {
+    if (!src)
+    {
       this.edit = null;
       return;
     }
@@ -225,7 +225,6 @@ export class ScenariosComponent implements OnInit {
       producedEventIds: clone.producedEventIds ?? [],
       actions: clone.actions ?? [],
       factChanges: clone.factChanges ?? [],
-      decisions: clone.decisions ?? [],
     };
 
     const e = this.edit;
@@ -235,14 +234,16 @@ export class ScenariosComponent implements OnInit {
     this.scenarioProducedEventIds = [...(e.producedEventIds ?? [])];
   }
 
-  cancelEdit() {
+  cancelEdit()
+  {
     this.editingId = null;
     this.edit = null;
     this.scenarioPreconditionIds = [];
     this.scenarioProducedEventIds = [];
   }
 
-  saveEdit() {
+  saveEdit()
+  {
     if (!this.edit) return;
 
     this.error = null;
@@ -257,27 +258,18 @@ export class ScenariosComponent implements OnInit {
     this.edit.description = (this.edit.description ?? '').trim() || undefined;
     this.edit.ownerSubdomain = (this.edit.ownerSubdomain ?? '').trim() || undefined;
 
-    if (!this.edit.scenarioKey) {
+    if (!this.edit.scenarioKey)
+    {
       this.error = 'Scenario Key الزامی است.';
       return;
     }
-    if (this.edit.stageId == null) {
+    if (this.edit.stageId == null)
+    {
       this.error = 'Stage الزامی است.';
       return;
     }
 
     if (this.edit.triggerId == null) this.edit.triggerId = undefined;
-
-    // ensure decisions shape
-    for (const d of (this.edit.decisions ?? [])) {
-      d.decisionKey = (d.decisionKey ?? '').trim();
-      d.titleFa = (d.titleFa ?? '').trim() || undefined;
-      d.uiActionKey = (d.uiActionKey ?? '').trim() || undefined;
-      d.conditionIds = d.conditionIds ?? [];
-      d.actions = (d.actions ?? []) as ScenarioActionRef[];
-      (d as any).factChanges = (d as any).factChanges ?? [];
-      d.producedEventIds = d.producedEventIds ?? [];
-    }
 
     const id = this.edit.id;
 
@@ -292,73 +284,35 @@ export class ScenariosComponent implements OnInit {
       producedEventIds: this.edit.producedEventIds ?? [],
       actions: (this.edit as any).actions ?? [],
       factChanges: (this.edit as any).factChanges ?? [],
-      decisions: (this.edit.decisions ?? []) as any,
     };
 
     this.scenariosApi.update(id, payload).subscribe({
-      next: (updated) => {
+      next: (updated) =>
+      {
         const idx = this.rows.findIndex((x) => x.id === id);
         if (idx >= 0) this.rows[idx] = updated;
         this.cancelEdit();
       },
-      error: (err: any) => {
+      error: (err: any) =>
+      {
         this.error = err?.message ?? 'خطا در ویرایش';
       },
     });
   }
 
-  removeScenario(id: number) {
+  removeScenario(id: number)
+  {
     this.error = null;
     this.scenariosApi.delete(id).subscribe({
-      next: () => {
+      next: () =>
+      {
         this.rows = this.rows.filter((x) => x.id !== id);
         if (this.editingId === id) this.cancelEdit();
       },
-      error: (err: any) => {
+      error: (err: any) =>
+      {
         this.error = err?.message ?? 'خطا در حذف';
       },
     });
-  }
-
-  // ===== Decisions =====
-
-  addDecision() {
-    if (!this.edit) return;
-
-    const d: ScenarioDecision = {
-      id: Date.now(),
-      decisionKey: 'NEW_DECISION',
-      titleFa: '',
-      uiActionKey: '',
-      conditionIds: [],
-      actions: [],
-      factChanges: [],
-      producedEventIds: [],
-    };
-
-    this.edit.decisions = [d, ...(this.edit.decisions ?? [])];
-    this.uiActionKeys = this.collectUiActionKeys();
-  }
-
-  removeDecision(decisionId: number) {
-    if (!this.edit) return;
-    this.edit.decisions = (this.edit.decisions ?? []).filter((d) => d.id !== decisionId);
-    this.uiActionKeys = this.collectUiActionKeys();
-  }
-
-  setDecisionUiActionKey(d: ScenarioDecision, value: string) {
-    d.uiActionKey = (value ?? '').trim();
-    this.uiActionKeys = this.collectUiActionKeys();
-  }
-
-  addDecisionAction(d: ScenarioDecision, actionId: number) {
-    if (!actionId) return;
-    d.actions = d.actions ?? [];
-    d.actions.push({ actionId, paramsJson: '' });
-  }
-
-  removeDecisionAction(d: ScenarioDecision, index: number) {
-    d.actions = d.actions ?? [];
-    d.actions.splice(index, 1);
   }
 }

@@ -1,0 +1,213 @@
+<div class="page">
+  <div class="head">
+    <div class="title">Decisions</div>
+    <div class="tools">
+      <button class="btn" (click)="loadCatalogs()">Reload</button>
+    </div>
+  </div>
+
+  <div class="alert" *ngIf="error">{{ error }}</div>
+
+  <div class="card">
+    <div class="card-title">Scenario</div>
+    <div class="row2">
+      <app-smart-select
+        label="Scenario"
+        [options]="scenarioOptions"
+        [value]="selectedScenarioId"
+        (valueChange)="onScenarioPick($event)">
+      </app-smart-select>
+
+      <div class="tools">
+        <button class="btn primary" (click)="addDecision()" [disabled]="!selectedScenarioId">+ Add Decision</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Decisions list -->
+    <div class="card">
+      <div class="card-title">Decisions</div>
+
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Title</th>
+            <th>UI Action</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of decisions" [class.active]="d.id===selectedDecisionId">
+            <td class="mono">{{ d.decisionKey }}</td>
+            <td>{{ d.titleFa }}</td>
+            <td class="mono">{{ d.uiActionKey }}</td>
+            <td class="right">
+              <button class="btn sm" (click)="selectDecision(d.id)">Edit</button>
+              <button class="btn sm danger" (click)="deleteDecision(d.id)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="!decisions.length">
+            <td colspan="4" class="muted center">Decision ندارد</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Decision editor -->
+    <div class="card" *ngIf="decisionEdit">
+      <div class="card-title">
+        Decision Editor
+        <div class="tools">
+          <button class="btn sm primary" (click)="saveDecision()">Save</button>
+        </div>
+      </div>
+
+      <div class="form">
+        <div class="row2">
+          <div>
+            <div class="lbl">Decision Key</div>
+            <input class="inp mono" [value]="decisionEdit.decisionKey"
+                   (input)="decisionEdit.decisionKey = $any($event.target).value" />
+          </div>
+          <div>
+            <div class="lbl">UI Action Key</div>
+            <input class="inp mono" [value]="decisionEdit.uiActionKey || ''"
+                   (input)="decisionEdit.uiActionKey = $any($event.target).value" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <div class="lbl">Title (FA)</div>
+            <input class="inp" [value]="decisionEdit.titleFa || ''"
+                   (input)="decisionEdit.titleFa = $any($event.target).value" />
+          </div>
+          <div class="tools">
+            <button class="btn" (click)="addOption()">+ Add Option</button>
+          </div>
+        </div>
+
+        <!-- Options table -->
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>OptionKey</th>
+              <th>Title</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let o of options" [class.active]="o.id===selectedOptionId">
+              <td class="mono">{{ o.optionKey }}</td>
+              <td>{{ o.titleFa }}</td>
+              <td class="right">
+                <button class="btn sm" (click)="selectOption(o.id)">Edit</button>
+                <button class="btn sm danger" (click)="deleteOption(o.id)">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="decisionEdit && !options.length">
+              <td colspan="3" class="muted center">Option ندارد</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option editor -->
+  <div class="card" *ngIf="optionEdit">
+    <div class="card-title">
+      Option Editor
+      <div class="tools">
+        <button class="btn sm primary" (click)="saveOption()">Save Option</button>
+      </div>
+    </div>
+
+    <div class="form">
+      <div class="row2">
+        <div>
+          <div class="lbl">Option Key</div>
+          <input class="inp mono" [value]="optionEdit.optionKey"
+                 (input)="optionEdit.optionKey = $any($event.target).value" />
+        </div>
+        <div>
+          <div class="lbl">Title (FA)</div>
+          <input class="inp" [value]="optionEdit.titleFa || ''"
+                 (input)="optionEdit.titleFa = $any($event.target).value" />
+        </div>
+      </div>
+
+      <app-ref-multi-select label="Conditions"
+        [options]="conditionOptions"
+        [selectedIds]="optionEdit.conditionIds"
+        (selectedIdsChange)="optionEdit.conditionIds = $event">
+      </app-ref-multi-select>
+
+      <app-ref-multi-select label="Actions"
+        [options]="actionOptions"
+        [selectedIds]="optionEdit.actionIds"
+        (selectedIdsChange)="optionEdit.actionIds = $event">
+      </app-ref-multi-select>
+
+      <app-ref-multi-select label="Produced Events"
+        [options]="eventOptions"
+        [selectedIds]="optionEdit.producedEventIds"
+        (selectedIdsChange)="optionEdit.producedEventIds = $event">
+      </app-ref-multi-select>
+
+      <div class="card sub">
+        <div class="card-title">
+          Fact Changes (Option-level)
+          <div class="tools">
+            <button class="btn sm" (click)="addOptionFactChange()">+ Add</button>
+          </div>
+        </div>
+
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Fact</th>
+              <th>Op</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fc of optionFactChanges">
+              <td>
+                <app-smart-select
+                  [options]="factOptions"
+                  [value]="fc.factId"
+                  (valueChange)="fc.factId = ($event ?? fc.factId)">
+                </app-smart-select>
+              </td>
+              <td>
+                <select class="inp" [value]="fc.op" (change)="fc.op = $any($event.target).value">
+                  <option value="Set">Set</option>
+                  <option value="Unset">Unset</option>
+                  <option value="Inc">Inc</option>
+                  <option value="Dec">Dec</option>
+                </select>
+              </td>
+              <td>
+                <input class="inp mono" [value]="fc.value || ''"
+                       (input)="fc.value = $any($event.target).value" />
+              </td>
+              <td class="right">
+                <button class="btn sm primary" (click)="saveOptionFactChange(fc)">Save</button>
+                <button class="btn sm danger" (click)="deleteOptionFactChange(fc.id)">Delete</button>
+              </td>
+            </tr>
+
+            <tr *ngIf="!optionFactChanges.length">
+              <td colspan="4" class="muted center">FactChange ندارد</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+  </div>
+</div>

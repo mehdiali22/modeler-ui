@@ -8,10 +8,13 @@ import { ScenarioApiService } from '../../../core/api/scenario-api.service';
 import { StageApiService } from '../../../core/api/stage-api.service';
 import { TriggerApiService } from '../../../core/api/trigger-api.service';
 
+import { ScenarioDecisionApiService, ScenarioDecisionDto } from '../../../core/api/scenario-decision-api.service';
+import { ScenarioDecisionOptionApiService, ScenarioDecisionOptionDto } from '../../../core/api/scenario-decision-option-api.service';
+
 import { EventDefinition, Scenario, Stage, TriggerDefinition } from '../../../core/types';
 
 type DecisionRow = {
-  uiActionKey: string;          // BTN_APPROVE ...
+  uiActionKey: string;
   scenarioId: number;
   scenarioKey: string;
   decisionId: number;
@@ -19,9 +22,11 @@ type DecisionRow = {
   stageId: number;
   stageKey: string;
   triggerKey: string;
+
   actionsCount: number;
   conditionsCount: number;
-  events: string[];            // eventKey list
+  events: string[];
+  optionsCount: number;
 };
 
 @Component({
@@ -31,8 +36,7 @@ type DecisionRow = {
   templateUrl: './ui-bindings.component.html',
   styleUrls: ['./ui-bindings.component.scss'],
 })
-export class UiBindingsComponent
-  implements OnInit
+export class UiBindingsComponent implements OnInit
 {
   error: string | null = null;
   rows: DecisionRow[] = [];
@@ -42,6 +46,9 @@ export class UiBindingsComponent
   triggers: TriggerDefinition[] = [];
   events: EventDefinition[] = [];
 
+  decisions: ScenarioDecisionDto[] = [];
+  options: ScenarioDecisionOptionDto[] = [];
+
   q = '';
   stageId: number | null = null;
 
@@ -50,13 +57,17 @@ export class UiBindingsComponent
     private scenariosApi: ScenarioApiService,
     private triggersApi: TriggerApiService,
     private eventsApi: EventApiService,
-  ) {}
+    private decisionsApi: ScenarioDecisionApiService,
+    private optionsApi: ScenarioDecisionOptionApiService,
+  ) { }
 
-  ngOnInit(): void {
+  ngOnInit(): void
+  {
     this.reload();
   }
 
-  reload() {
+  reload()
+  {
     this.error = null;
 
     forkJoin({
@@ -64,48 +75,90 @@ export class UiBindingsComponent
       scenarios: this.scenariosApi.list(),
       triggers: this.triggersApi.list(),
       events: this.eventsApi.list(),
+      decisions: this.decisionsApi.list(), // all decisions
+      options: this.optionsApi.list(),     // all options
     }).subscribe({
       next: (res: {
         stages?: Stage[];
         scenarios?: Scenario[];
         triggers?: TriggerDefinition[];
         events?: EventDefinition[];
-      }) => {
+        decisions?: ScenarioDecisionDto[];
+        options?: ScenarioDecisionOptionDto[];
+      }) =>
+      {
         this.stages = res.stages ?? [];
         this.scenarios = res.scenarios ?? [];
         this.triggers = res.triggers ?? [];
         this.events = res.events ?? [];
+        this.decisions = res.decisions ?? [];
+        this.options = res.options ?? [];
 
-        const stageById = new Map<number, Stage>(this.stages.map((s) => [s.id, s]));
-        const triggerById = new Map<number, TriggerDefinition>(this.triggers.map((t) => [t.id, t]));
-        const eventKeyById = new Map<number, string>(this.events.map((e) => [e.id, e.eventKey]));
+        const stageById = new Map<number, Stage>(this.stages.map(s => [s.id, s]));
+        const scenarioById = new Map<number, Scenario>(this.scenarios.map(s => [s.id, s]));
+        const triggerById = new Map<number, TriggerDefinition>(this.triggers.map(t => [t.id, t]));
+        const eventKeyById = new Map<number, string>(this.events.map(e => [e.id, e.eventKey]));
 
-        const out: DecisionRow[] = [];
-        for (const s of this.scenarios) {
-          const stageId = (s.stageId ?? 0) as number;
-          const st = stageById.get(stageId);
-          const tr = s.triggerId != null ? triggerById.get(s.triggerId) : undefined;
-
-          for (const d of (s.decisions ?? [])) {
-            const ui = (d.uiActionKey ?? '').trim();
-
-            out.push({
-              uiActionKey: ui || '—',
-              scenarioId: s.id,
-              scenarioKey: s.scenarioKey,
-              decisionId: d.id,
-              decisionKey: d.decisionKey,
-              stageId,
-              stageKey: st?.stageKey ?? '—',
-              triggerKey: tr?.triggerKey ?? '—',
-              actionsCount: (d.actions?.length ?? 0),
-              conditionsCount: (d.conditionIds?.length ?? 0),
-              events: (d.producedEventIds ?? []).map((id) => eventKeyById.get(id) ?? '—'),
-            });
-          }
+        // group options by decisionId
+        const optsByDecisionId = new Map<number, ScenarioDecisionOptionDto[]>();
+        for (const o of this.options)
+        {
+          const list = optsByDecisionId.get(o.scenarioDecisionId) ?? [];
+          list.push(o);
+          optsByDecisionId.set(o.scenarioDecisionId, list);
         }
 
-        // مرتب‌سازی: اول uiActionKey بعد stage بعد scenario
+        const out: DecisionRow[] = [];
+
+        for (const d of this.decisions)
+        {
+          const s = scenarioById.get(d.scenarioId);
+          if (!s) continue;
+
+          const stId = (s.stageId ?? 0) as number;
+          const st = stageById.get(stId);
+          const tr = s.triggerId != null ? triggerById.get(s.triggerId) : undefined;
+
+          const ui = (d.uiActionKey ?? '').trim();
+          const opts = optsByDecisionId.get(d.id) ?? [];
+
+          // aggregate from options JSON
+          let actionsCount = 0;
+          let conditionsCount = 0;
+
+          const eventIds = new Set<number>();
+          for (const o of opts)
+          {
+            const cids = this.parseIds(o.conditionIdsJson);
+            const aids = this.parseIds(o.actionIdsJson);
+            const eids = this.parseIds(o.producedEventIdsJson);
+
+            conditionsCount += cids.length;
+            actionsCount += aids.length;
+            for (const id of eids) eventIds.add(id);
+          }
+
+          const eventKeys = [...eventIds.values()]
+            .map(id => eventKeyById.get(id) ?? '—')
+            .filter(x => !!x);
+
+          out.push({
+            uiActionKey: ui || '—',
+            scenarioId: s.id,
+            scenarioKey: s.scenarioKey,
+            decisionId: d.id,
+            decisionKey: d.decisionKey,
+            stageId: stId,
+            stageKey: st?.stageKey ?? '—',
+            triggerKey: tr?.triggerKey ?? '—',
+            actionsCount,
+            conditionsCount,
+            events: eventKeys,
+            optionsCount: opts.length,
+          });
+        }
+
+        // sort
         out.sort((a, b) =>
           a.uiActionKey.localeCompare(b.uiActionKey) ||
           a.stageKey.localeCompare(b.stageKey) ||
@@ -115,7 +168,8 @@ export class UiBindingsComponent
 
         this.rows = out;
       },
-      error: (err: any) => {
+      error: (err: any) =>
+      {
         this.error = err?.message ?? 'خطا در ارتباط با API';
       },
     });
@@ -138,7 +192,6 @@ export class UiBindingsComponent
     });
   }
 
-  // برای پیدا کردن دکمه‌هایی که چند جا استفاده شدن
   get duplicates(): { key: string; count: number }[]
   {
     const map = new Map<string, number>();
@@ -152,5 +205,19 @@ export class UiBindingsComponent
       .filter(([, c]) => c > 1)
       .map(([key, count]) => ({ key, count }))
       .sort((a, b) => b.count - a.count);
+  }
+
+  private parseIds(json?: string): number[]
+  {
+    try
+    {
+      if (!json) return [];
+      const arr = JSON.parse(json);
+      if (!Array.isArray(arr)) return [];
+      return arr.map(x => +x).filter(x => Number.isFinite(x) && x > 0);
+    } catch
+    {
+      return [];
+    }
   }
 }

@@ -177,3 +177,31 @@ tr.active {
   font-size: 12px;
   margin-top: 6px;
 }
+/*--------------------new--------*/
+.inp {
+  width: 100%;
+  box-sizing: border-box;   // ✅ مهم
+}
+
+/* جلوگیری از overflow داخل grid */
+.row2 > * {
+  min-width: 0;             // ✅ مهم
+}
+
+/* اطمینان از اینکه کامپوننت‌های سفارشی مثل input رفتار کنن */
+app-smart-select,
+app-ref-multi-select {
+  display: block;
+  width: 100%;
+}
+
+/* responsive: وقتی فضا کم شد، دو ستون تبدیل به تک‌ستون بشه */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;   // لیست بالا، ادیتور پایین
+  }
+
+  .row2 {
+    grid-template-columns: 1fr;   // ✅ فیلدها زیر هم
+  }
+}
