@@ -1,0 +1,24 @@
+<div class="page" dir="rtl">
+  <div class="head"><div class="title">Kartabl Routing Rules</div><button class="btn" (click)="load()">Reload</button></div>
+  <div class="alert" *ngIf="error">{{ error }}</div>
+  <div class="grid">
+    <section class="card">
+      <div class="card-title">Editor</div>
+      <div class="form">
+        <div class="row2"><div><div class="lbl">RuleKey</div><input class="inp mono" [value]="draft.ruleKey" (input)="draft.ruleKey = $any($event.target).value"></div><div><div class="lbl">Priority</div><input class="inp" [value]="draft.priority" (input)="draft.priority = $any($event.target).value"></div></div>
+        <div class="row2"><div><div class="lbl">From Kartabl اختیاری</div><app-smart-select [options]="kartablOptions" [value]="draft.fromKartablId" (valueChange)="draft.fromKartablId = $event"></app-smart-select></div><div><div class="lbl">Target Kartabl</div><app-smart-select [options]="kartablOptions" [value]="draft.targetKartablId" (valueChange)="draft.targetKartablId = $event"></app-smart-select></div></div>
+        <div class="row2"><div><div class="lbl">OwnerSubdomain</div><input class="inp" [value]="draft.ownerSubdomain" (input)="draft.ownerSubdomain = $any($event.target).value"></div><div><div class="lbl">عنوان</div><input class="inp" [value]="draft.titleFa" (input)="draft.titleFa = $any($event.target).value"></div></div>
+        <div><div class="lbl">ConditionIdsJson</div><textarea rows="3" class="inp mono" [value]="draft.conditionIdsJson" (input)="draft.conditionIdsJson = $any($event.target).value"></textarea></div>
+        <div><div class="lbl">Description</div><input class="inp" [value]="draft.description" (input)="draft.description = $any($event.target).value"></div>
+        <div><button class="btn" (click)="reset()">Reset</button> <button class="btn primary" (click)="submit()">{{ editingId === null ? 'Add' : 'Save' }}</button></div>
+      </div>
+    </section>
+    <section class="card">
+      <div class="card-title">Rules</div>
+      <table class="tbl"><thead><tr><th>Rule</th><th>Priority</th><th>From</th><th>Target</th><th>Conditions</th><th></th></tr></thead><tbody>
+        <tr *ngFor="let r of rows"><td class="mono">{{ r.ruleKey }}</td><td>{{ r.priority }}</td><td>{{ title(r.fromKartablId) }}</td><td>{{ title(r.targetKartablId) }}</td><td class="mono">{{ r.conditionIdsJson }}</td><td class="right"><button class="btn sm" (click)="edit(r)">Edit</button> <button class="btn sm danger" (click)="remove(r)">Delete</button></td></tr>
+        <tr *ngIf="!rows.length"><td colspan="6" class="muted center">رکوردی ثبت نشده است.</td></tr>
+      </tbody></table>
+    </section>
+  </div>
+</div>

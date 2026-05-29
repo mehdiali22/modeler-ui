@@ -151,12 +151,6 @@
         (selectedIdsChange)="optionEdit.actionIds = $event">
       </app-ref-multi-select>
 
-      <app-ref-multi-select label="Produced Events"
-        [options]="eventOptions"
-        [selectedIds]="optionEdit.producedEventIds"
-        (selectedIdsChange)="optionEdit.producedEventIds = $event">
-      </app-ref-multi-select>
-
       <div class="card sub">
         <div class="card-title">
           Fact Changes (Option-level)
@@ -168,6 +162,7 @@
         <table class="tbl">
           <thead>
             <tr>
+              <th>#</th>
               <th>Fact</th>
               <th>Op</th>
               <th>Value</th>
@@ -175,16 +170,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let fc of optionFactChanges">
+            <tr *ngFor="let fc of optionFactChanges; let i = index">
+              <td class="mono">{{ i + 1 }}</td>
               <td>
                 <app-smart-select
                   [options]="factOptions"
                   [value]="fc.factId"
-                  (valueChange)="fc.factId = ($event ?? fc.factId)">
+                  (valueChange)="fc.factId = ($event ?? fc.factId); onOptionFactChangeRowChanged(fc)">
                 </app-smart-select>
               </td>
               <td>
-                <select class="inp" [value]="fc.op" (change)="fc.op = $any($event.target).value">
+                <select class="inp" [value]="fc.op" (change)="fc.op = $any($event.target).value; onOptionFactChangeRowChanged(fc)">
                   <option value="Set">Set</option>
                   <option value="Unset">Unset</option>
                   <option value="Inc">Inc</option>
@@ -193,7 +189,7 @@
               </td>
               <td>
                 <input class="inp mono" [value]="fc.value || ''"
-                       (input)="fc.value = $any($event.target).value" />
+                       (input)="fc.value = $any($event.target).value; onOptionFactChangeRowChanged(fc)" />
               </td>
               <td class="right">
                 <button class="btn sm primary" (click)="saveOptionFactChange(fc)">Save</button>
@@ -202,10 +198,19 @@
             </tr>
 
             <tr *ngIf="!optionFactChanges.length">
-              <td colspan="4" class="muted center">FactChange ندارد</td>
+              <td colspan="5" class="muted center">FactChange ندارد</td>
             </tr>
           </tbody>
         </table>
+
+        <div class="tools">
+          <button class="btn sm" (click)="refreshOptionFactChangesJson()">Dropdown → JSON</button>
+        </div>
+        <div class="lbl">FactChanges JSON</div>
+        <textarea class="inp mono" rows="8" [value]="optionFactChangesJson" (input)="optionFactChangesJson = $any($event.target).value" placeholder='[{ "factKey": "Asnadm", "op": "Set", "value": "DaryaftShode" }]'></textarea>
+        <div class="tools">
+          <button class="btn sm primary" (click)="applyOptionFactChangesJson()">JSON → Dropdown</button>
+        </div>
 
       </div>
     </div>

@@ -1,0 +1,22 @@
+<div class="page" dir="rtl">
+  <div class="head"><div class="title">Kartabl Queue</div><div class="tools"><button class="btn" (click)="loadLookups()">Reload Lookups</button><button class="btn primary" (click)="reload()">Search</button></div></div>
+  <div class="alert" *ngIf="error">{{ error }}</div><div class="alert ok" *ngIf="message">{{ message }}</div>
+  <section class="card"><div class="form">
+    <div class="row2"><div><div class="lbl">Kartabl</div><app-smart-select [options]="kartablOptions" [value]="selectedKartablId" (valueChange)="selectedKartablId = $event; reload()"></app-smart-select></div><div><div class="lbl">q</div><input class="inp" [value]="query.q" (input)="query.q = $any($event.target).value" placeholder="search" /></div></div>
+    <div class="row2"><div><div class="lbl">OwnerSubdomain</div><input class="inp" [value]="query.ownerSubdomain" (input)="query.ownerSubdomain = $any($event.target).value"></div><div><div class="lbl">Status</div><input class="inp" [value]="query.status" (input)="query.status = $any($event.target).value" placeholder="Ready,Waiting"></div></div>
+    <div class="row2"><div><div class="lbl">ReferenceNo</div><input class="inp" [value]="query.referenceNo" (input)="query.referenceNo = $any($event.target).value"></div><div><div class="lbl">CaseId</div><input class="inp" [value]="query.caseId" (input)="query.caseId = $any($event.target).value"></div></div>
+  </div></section>
+  <section class="card">
+    <div class="card-title">Items <span class="muted">{{ total }}</span></div>
+    <table class="tbl"><thead><tr><th>Key</th><th>Title</th><th>Status</th><th>Ref</th><th>CaseId</th><th>Kartabl</th><th></th></tr></thead><tbody>
+      <tr *ngFor="let r of rows"><td class="mono">{{ r.workItemKey }}</td><td>{{ r.title || '—' }}</td><td class="mono">{{ r.caseStatus || '—' }}</td><td>{{ r.referenceNo || '—' }}</td><td>{{ r.caseId || '—' }}</td><td>{{ kartablTitle(r.currentKartablId) }}</td><td class="right"><button class="btn sm" (click)="showDetails(r)">Facts</button> <button class="btn sm primary" (click)="startExecute(r)">Execute</button></td></tr>
+      <tr *ngIf="!rows.length"><td colspan="7" class="muted center">آیتمی در این کارتابل نیست.</td></tr>
+    </tbody></table>
+  </section>
+  <section class="card" *ngIf="exec"><div class="card-title">Execute: <span class="mono">{{ exec.workItem.workItemKey }}</span></div>
+    <div class="row2"><div><div class="lbl">Scenario</div><app-smart-select [options]="scenarioOptions" [value]="exec.scenarioId" (valueChange)="loadOptions($event)"></app-smart-select></div><div><div class="lbl">Option اختیاری</div><app-smart-select [options]="optionOptions" [value]="exec.decisionOptionId" (valueChange)="exec.decisionOptionId = $event"></app-smart-select></div></div>
+    <div class="tools"><button class="btn" (click)="exec = null">Cancel</button><button class="btn primary" [disabled]="!exec.scenarioId" (click)="execute()">Execute Scenario</button></div>
+  </section>
+</div>
+
+  <section class="card" *ngIf="details"><div class="card-title">Facts: <span class="mono">{{ details.workItemKey }}</span><button class="btn sm" (click)="details = null">Close</button></div><pre class="facts mono">{{ prettyFacts(details) }}</pre></section>

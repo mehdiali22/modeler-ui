@@ -9,6 +9,7 @@ export type DecisionOptionFactChangeDto = {
   scenarioDecisionOptionId: number;
   factId: number;
   op: 'Set' | 'Unset' | 'Inc' | 'Dec';
+  sortOrder?: number;
   value?: string;
 };
 

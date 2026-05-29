@@ -1,0 +1,118 @@
+<div class="page" dir="rtl">
+  <div class="head">
+    <div>
+      <div class="title">Mermaid Export</div>
+      <div class="hint">
+        خروجی اصلی به صورت State-based Activity ساخته می‌شود؛ یعنی State → Action → State. فیلترها کمک می‌کنند نمودار یک Process، SubProcess، Stage، Scenario یا Action مشخص را ببینی.
+      </div>
+    </div>
+
+    <div class="tools">
+      <select
+        class="inp"
+        [value]="mode"
+        (change)="onModeChange($any($event.target).value)"
+      >
+        <option value="state-action-activity">State-based Activity: Action</option>
+        <option value="structure">ساختار Process/SubProcess/Stage</option>
+        <option value="routing">مسیردهی کارتابل</option>
+        <option value="full">ساختار + مسیردهی</option>
+      </select>
+
+      <select
+        class="inp"
+        *ngIf="showProcessFilter"
+        [value]="selectedProcessId"
+        (change)="onProcessChange($any($event.target).value)"
+      >
+        <option value="">همه Processها</option>
+        <option *ngFor="let p of data.processes" [value]="p.id">
+          {{ p.titleFa || p.processKey }}
+        </option>
+      </select>
+
+      <select
+        class="inp"
+        *ngIf="showSubProcessFilter"
+        [value]="selectedSubProcessId"
+        (change)="onSubProcessChange($any($event.target).value)"
+      >
+        <option value="">همه SubProcessها</option>
+        <option *ngFor="let sp of filteredSubProcesses" [value]="sp.id">
+          {{ sp.titleFa || sp.subProcessKey }}
+        </option>
+      </select>
+
+      <select
+        class="inp"
+        *ngIf="showStageFilter"
+        [value]="selectedStageId"
+        (change)="onStageChange($any($event.target).value)"
+      >
+        <option value="">همه Stageها</option>
+        <option *ngFor="let st of filteredStages" [value]="st.id">
+          {{ st.titleFa || st.stageKey }}
+        </option>
+      </select>
+
+      <select
+        class="inp"
+        *ngIf="showScenarioFilter"
+        [value]="selectedScenarioId"
+        (change)="onScenarioChange($any($event.target).value)"
+      >
+        <option value="">همه Scenarioها</option>
+        <option *ngFor="let sc of filteredScenarios" [value]="sc.id">
+          {{ sc.titleFa || sc.scenarioKey }}
+        </option>
+      </select>
+
+      <select
+        class="inp"
+        *ngIf="showActionFilter"
+        [value]="selectedActionId"
+        (change)="onActionChange($any($event.target).value)"
+      >
+        <option value="">همه Actionها</option>
+        <option *ngFor="let a of filteredActions" [value]="a.id">
+          {{ a.titleFa || a.actionKey }}
+        </option>
+      </select>
+
+      <button class="btn" (click)="refresh()">Refresh</button>
+      <button class="btn" (click)="copy()" [disabled]="!mermaid">Copy</button>
+      <button class="btn" (click)="download()" [disabled]="!mermaid">
+        Download .mmd
+      </button>
+    </div>
+  </div>
+
+  <div class="alert" *ngIf="error">{{ error }}</div>
+
+  <div class="summary card">
+    <span
+      >Processes: <b>{{ data.processes.length }}</b></span
+    >
+    <span
+      >SubProcesses: <b>{{ data.subProcesses.length }}</b></span
+    >
+    <span
+      >Stages: <b>{{ data.stages.length }}</b></span
+    >
+    <span
+      >Kartabls: <b>{{ data.kartabls.length }}</b></span
+    >
+    <span
+      >Scenarios: <b>{{ data.scenarios.length }}</b></span
+    >
+    <span
+      >Actions: <b>{{ data.actions.length }}</b></span
+    >
+    <span *ngIf="isLoading" class="muted">در حال خواندن داده‌ها...</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mermaid Text</div>
+    <textarea class="output" dir="ltr" readonly [value]="mermaid"></textarea>
+  </div>
+</div>

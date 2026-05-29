@@ -17,7 +17,9 @@
           <tr>
             <th>actionKey</th>
             <th>title</th>
-            <th>executor</th>
+            <th>executorKind</th>
+            <th>executorActor</th>
+            <th>targetArtifact</th>
             <th></th>
           </tr>
         </thead>
@@ -26,13 +28,15 @@
             <td class="mono">{{ r.actionKey }}</td>
             <td>{{ r.titleFa }}</td>
             <td class="mono">{{ r.executorKind }}</td>
+            <td class="mono">{{ actorKeyById(r.executorActorId) }}</td>
+            <td class="mono">{{ artifactKeyById(r.targetArtifactId) }}</td>
             <td class="right">
               <button class="btn sm" (click)="editRow(r.id)">Edit</button>
               <button class="btn sm danger" (click)="remove(r.id)">Delete</button>
             </td>
           </tr>
           <tr *ngIf="!filtered.length">
-            <td colspan="4" class="muted center">—</td>
+            <td colspan="6" class="muted center">—</td>
           </tr>
         </tbody>
       </table>
@@ -77,7 +81,7 @@
           </div>
         </div>
 
-        <div class="row2" *ngIf="edit.executorKind==='Human'">
+        <div class="row2">
           <div>
             <div class="lbl">executorActor</div>
             <app-smart-select [options]="actorOptions"

@@ -4,7 +4,7 @@
 
     <div class="tools">
       <input class="inp"
-             placeholder="جستجو… (مثلاً flow، scenario، ksr، import)"
+             placeholder="جستجو… (مثلاً kartabl، scenario، ksr، import)"
              [value]="q"
              (input)="q = $any($event.target).value" />
       <div class="muted small">({{ resultsCount }} نتیجه)</div>
@@ -96,9 +96,9 @@
     <div class="card-title">Quick Tips</div>
 
     <ul class="bul">
-      <li><b>Scenario</b> با Trigger شروع می‌شود، Preconditions را چک می‌کند، Actions را اجرا می‌کند و Event تولید می‌کند.</li>
-      <li><b>Decision</b> شاخه‌ی سناریو است: شرط‌ها + uiActionKey + actions/producedEvents.</li>
-      <li>برای پیدا کردن حلقه‌ها و مسیرها، <b>Flow v2</b> معمولاً بهترین ابزار است.</li>
+      <li><b>Scenario</b> روی WorkItem اجرا می‌شود، Preconditions را چک می‌کند و FactChange/Action اعمال می‌کند.</li>
+      <li><b>Decision</b> شاخه‌ی سناریو است: شرط‌ها + actions + factChanges.</li>
+      <li>مسیر پرونده الان با <b>KartablRoutingRule</b> و <b>Kartabl Queue</b> تست می‌شود.</li>
       <li>اگر صفحه‌ای خطای RouterLink داد، در standalone component باید <b>RouterLink</b> یا <b>RouterModule</b> را در imports اضافه کنی.</li>
       <li>در template از <b>(x as any)</b> استفاده نکن؛ به‌جاش <b>$any(x)</b> یا getter/setter در TS.</li>
     </ul>

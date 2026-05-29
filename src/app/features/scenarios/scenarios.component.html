@@ -1,115 +1,60 @@
-<div class="page">
+<div class="page" dir="rtl">
   <div class="head">
     <div class="title">Scenarios</div>
-    <div class="tools">
-      <button class="btn" (click)="reload()">Reload</button>
-      <button class="btn primary" (click)="addScenario()">+ Add Scenario</button>
-    </div>
+    <div class="tools"><button class="btn" (click)="reload()">Reload</button><button class="btn primary" (click)="addScenario()">+ Add Scenario</button></div>
   </div>
   <div class="alert" *ngIf="error">{{ error }}</div>
-
   <div class="grid">
-    <!-- list -->
     <div class="card">
       <div class="card-title">List</div>
-
+      <input class="inp" [value]="q" (input)="q = $any($event.target).value" placeholder="Search scenario..." />
       <table class="tbl">
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Stage</th>
-            <th>Title</th>
-            <th></th>
-          </tr>
-        </thead>
-
+        <thead><tr><th>Key</th><th>Stage</th><th>Kartabls</th><th>Title</th><th></th></tr></thead>
         <tbody>
-          <tr *ngFor="let r of rows" [class.active]="r.id===editingId">
-            <td class="mono">{{ r.scenarioKey }}</td>
-            <td class="mono">{{ stageTitle(r.stageId) }}</td>
-            <td>{{ r.titleFa }}</td>
-            <td class="right">
-              <button class="btn sm" (click)="editRow(r.id)">Edit</button>
-              <button class="btn sm danger" (click)="removeScenario(r.id)">Delete</button>
-            </td>
+          <tr *ngFor="let r of filtered" [class.active]="r.id===editingId">
+            <td class="mono">{{ r.scenarioKey }}</td><td class="mono">{{ stageTitle(r.stageId) }}</td><td class="mono">{{ kartablTitles(r.kartablIds) }}</td><td>{{ r.titleFa }}</td>
+            <td class="right"><button class="btn sm" (click)="editRow(r.id)">Edit</button> <button class="btn sm danger" (click)="removeScenario(r.id)">Delete</button></td>
           </tr>
-
-          <tr *ngIf="!rows.length">
-            <td colspan="4" class="muted center">هیچ سناریویی ندارید</td>
-          </tr>
+          <tr *ngIf="!filtered.length"><td colspan="5" class="muted center">هیچ سناریویی ندارید</td></tr>
         </tbody>
       </table>
     </div>
-
-    <!-- editor -->
     <div class="card" *ngIf="edit">
-      <div class="card-title">
-        Editor
-        <div class="tools">
-          <button class="btn sm" (click)="cancelEdit()">Cancel</button>
-          <button class="btn sm primary" (click)="saveEdit()">Save</button>
-        </div>
-      </div>
-
+      <div class="card-title">Editor <div class="tools"><button class="btn sm" (click)="cancelEdit()">Cancel</button><button class="btn sm primary" (click)="saveEdit()">Save</button></div></div>
       <div class="form">
-        <div class="row2">
-          <div>
-            <div class="lbl">Scenario Key</div>
-            <input class="inp mono" [value]="edit.scenarioKey"
-                   (input)="edit.scenarioKey = $any($event.target).value">
-          </div>
+        <div class="row2"><div><div class="lbl">Scenario Key</div><input class="inp mono" [value]="edit.scenarioKey" (input)="edit.scenarioKey = $any($event.target).value"></div><div><div class="lbl">Owner Subdomain</div><input class="inp" [value]="edit.ownerSubdomain || ''" (input)="edit.ownerSubdomain = $any($event.target).value"></div></div>
+        <div class="row2"><div><div class="lbl">Title (FA)</div><input class="inp" [value]="edit.titleFa || ''" (input)="edit.titleFa = $any($event.target).value"></div><div><div class="lbl">Stage</div><app-smart-select [options]="stageOptions" [value]="edit.stageId" (valueChange)="edit.stageId = ($event ?? edit.stageId)"></app-smart-select></div></div>
+        <div><div class="lbl">Description</div><input class="inp" [value]="edit.description || ''" (input)="edit.description = $any($event.target).value"></div>
+        <app-ref-multi-select label="Kartabls / محل‌های قابل اجرا" [options]="kartablOptions" [selectedIds]="scenarioKartablIds" (selectedIdsChange)="scenarioKartablIds = $event"></app-ref-multi-select>
+        <app-ref-multi-select label="Preconditions" [options]="condOptions" [selectedIds]="scenarioPreconditionIds" (selectedIdsChange)="scenarioPreconditionIds = $event"></app-ref-multi-select>
 
-          <div>
-            <div class="lbl">Owner Subdomain</div>
-            <input class="inp" [value]="edit.ownerSubdomain || ''"
-                   (input)="edit.ownerSubdomain = $any($event.target).value">
-          </div>
-        </div>
+        <div class="section-title">FactChanges</div>
+        <div class="muted small">می‌توانی FactChangeها را با Dropdown بسازی، یا JSON بدهی و با دکمه Apply به ردیف‌های Dropdown تبدیلش کنی.</div>
+        <table class="tbl mini"><thead><tr><th>#</th><th>Fact</th><th>Op</th><th>Value</th><th></th></tr></thead><tbody>
+          <tr *ngFor="let fc of edit.factChanges; let i = index">
+            <td class="mono">{{ i + 1 }}</td>
+            <td><select class="inp" [value]="fc.factId" (change)="fc.factId = +$any($event.target).value; onFactChangeRowChanged()"><option *ngFor="let f of factOptions" [value]="f.id">{{ f.text }}</option></select></td>
+            <td><select class="inp" [value]="fc.op" (change)="fc.op = $any($event.target).value; onFactChangeRowChanged()"><option value="Set">Set</option><option value="Unset">Unset</option><option value="Inc">Inc</option><option value="Dec">Dec</option></select></td>
+            <td><input class="inp mono" [value]="fc.value || ''" (input)="fc.value = $any($event.target).value; onFactChangeRowChanged()"></td>
+            <td><button class="btn sm danger" (click)="removeFactChange(i)">Remove</button></td>
+          </tr>
+          <tr *ngIf="!(edit.factChanges || []).length"><td colspan="5" class="muted center">FactChange ندارد.</td></tr>
+        </tbody></table>
+        <div class="tools"><button class="btn sm" (click)="addFactChange()">+ Add FactChange</button><button class="btn sm" (click)="refreshFactChangesJson()">Dropdown → JSON</button></div>
+        <div class="lbl">FactChanges JSON</div>
+        <textarea class="inp mono" rows="8" [value]="factChangesJson" (input)="factChangesJson = $any($event.target).value" placeholder='[{ "factKey": "Asnadm", "op": "Set", "value": "DaryaftShode" }]'></textarea>
+        <div class="tools"><button class="btn sm primary" (click)="applyFactChangesJson()">JSON → Dropdown</button></div>
 
-        <div class="row2">
-          <div>
-            <div class="lbl">Title (FA)</div>
-            <input class="inp" [value]="edit.titleFa || ''"
-                   (input)="edit.titleFa = $any($event.target).value">
-          </div>
-
-          <div>
-            <div class="lbl">Stage</div>
-            <app-smart-select [options]="stageOptions"
-                              [value]="edit.stageId"
-                              (valueChange)="edit.stageId = ($event ?? edit.stageId)">
-            </app-smart-select>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div>
-            <div class="lbl">Trigger</div>
-            <app-smart-select [options]="triggerOptions"
-                              [value]="edit.triggerId ?? null"
-                              (valueChange)="edit.triggerId = ($event ?? undefined)">
-            </app-smart-select>
-          </div>
-
-          <div>
-            <div class="lbl">Description</div>
-            <input class="inp" [value]="edit.description || ''"
-                   (input)="edit.description = $any($event.target).value">
-          </div>
-        </div>
-
-        <app-ref-multi-select label="Preconditions"
-                              [options]="condOptions"
-                              [selectedIds]="scenarioPreconditionIds"
-                              (selectedIdsChange)="scenarioPreconditionIds = $event">
-        </app-ref-multi-select>
-
-        <app-ref-multi-select label="Produced Events (Scenario-level)"
-                              [options]="eventOptions"
-                              [selectedIds]="scenarioProducedEventIds"
-                              (selectedIdsChange)="scenarioProducedEventIds = $event">
-        </app-ref-multi-select>
-
+        <div class="section-title">Scenario Actions</div>
+        <table class="tbl mini"><thead><tr><th>Action</th><th>ParamsJson</th><th></th></tr></thead><tbody>
+          <tr *ngFor="let a of edit.actions; let i = index">
+            <td><select class="inp" [value]="a.actionId" (change)="a.actionId = +$any($event.target).value"><option *ngFor="let act of actionOptions" [value]="act.id">{{ act.text }}</option></select></td>
+            <td><input class="inp mono" [value]="a.paramsJson || ''" (input)="a.paramsJson = $any($event.target).value" placeholder="{}"></td>
+            <td><button class="btn sm danger" (click)="removeActionRef(i)">Remove</button></td>
+          </tr>
+          <tr *ngIf="!(edit.actions || []).length"><td colspan="3" class="muted center">Action ندارد.</td></tr>
+        </tbody></table>
+        <button class="btn sm" (click)="addActionRef()">+ Add Action</button>
       </div>
     </div>
   </div>

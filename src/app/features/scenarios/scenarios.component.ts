@@ -2,33 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import
-  {
-    ActionDefinition,
-    Condition,
-    EventDefinition,
-    Scenario,
-    Stage,
-    TriggerDefinition,
-  } from '../../core/types';
-
+import { ActionDefinition, Condition, Fact, Kartabl, Scenario, Stage } from '../../core/types';
 import { ActionApiService } from '../../core/api/action-api.service';
+import { FactApiService } from '../../core/api/fact-api.service';
 import { ConditionApiService } from '../../core/api/condition-api.service';
-import { EventApiService } from '../../core/api/event-api.service';
+import { KartablApiService } from '../../core/api/kartabl-api.service';
 import { ScenarioApiService } from '../../core/api/scenario-api.service';
 import { StageApiService } from '../../core/api/stage-api.service';
-import { TriggerApiService } from '../../core/api/trigger-api.service';
-
 import { RefMultiSelectComponent, RefOption } from '../../shared/ref-multi-select/ref-multi-select.component';
 import { SmartSelectComponent, SmartOption } from '../../shared/smart-select/smart-select.component';
 
-// We keep a flexible edit type because UI sometimes augments the Scenario
-// shape (e.g., ensuring arrays exist).
-type ScenarioEdit = Scenario & {
-  stageId: number | null;
-  triggerId?: number | null;
-  [key: string]: any;
-};
+type ScenarioEdit = Scenario & { stageId: number | null; [key: string]: any };
 
 @Component({
   selector: 'app-scenarios',
@@ -37,282 +21,222 @@ type ScenarioEdit = Scenario & {
   templateUrl: './scenarios.component.html',
   styleUrls: ['./scenarios.component.scss'],
 })
-export class ScenariosComponent implements OnInit
-{
+export class ScenariosComponent implements OnInit {
   rows: Scenario[] = [];
-
   stages: Stage[] = [];
-  triggers: TriggerDefinition[] = [];
-  events: EventDefinition[] = [];
+  kartabls: Kartabl[] = [];
   conditions: Condition[] = [];
   actions: ActionDefinition[] = [];
-
+  facts: Fact[] = [];
   stageOptions: SmartOption[] = [];
-  triggerOptions: SmartOption[] = [];
-  actionOptions: { id: number; text: string; sub?: string }[] = [];
-
   condOptions: RefOption[] = [];
-  eventOptions: RefOption[] = [];
-
+  kartablOptions: RefOption[] = [];
+  actionOptions: { id: number; text: string; sub?: string }[] = [];
+  factOptions: { id: number; text: string; sub?: string }[] = [];
   q = '';
   error: string | null = null;
-
   editingId: number | null = null;
   edit: ScenarioEdit | null = null;
-
   scenarioPreconditionIds: number[] = [];
-  scenarioProducedEventIds: number[] = [];
+  scenarioKartablIds: number[] = [];
+  factChangesJson = '[]';
 
   constructor(
     private scenariosApi: ScenarioApiService,
     private stagesApi: StageApiService,
-    private triggersApi: TriggerApiService,
-    private eventsApi: EventApiService,
+    private kartablApi: KartablApiService,
     private conditionsApi: ConditionApiService,
     private actionsApi: ActionApiService,
-  ) { }
+    private factsApi: FactApiService,
+  ) {}
 
-  ngOnInit(): void
-  {
-    this.reload();
-  }
+  ngOnInit(): void { this.reload(); }
 
-  reload()
-  {
+  reload() {
     this.error = null;
-
-    forkJoin({
-      scenarios: this.scenariosApi.list(),
-      stages: this.stagesApi.list(),
-      triggers: this.triggersApi.list(),
-      events: this.eventsApi.list(),
-      conditions: this.conditionsApi.list(),
-      actions: this.actionsApi.list(),
-    }).subscribe({
-      next: (res) =>
-      {
-        this.rows = (res.scenarios ?? []) as Scenario[];
+    forkJoin({ scenarios: this.scenariosApi.list(), stages: this.stagesApi.list(), kartabls: this.kartablApi.list(), conditions: this.conditionsApi.list(), actions: this.actionsApi.list(), facts: this.factsApi.list() }).subscribe({
+      next: res => {
+        this.rows = res.scenarios ?? [];
         this.stages = res.stages ?? [];
-        this.triggers = res.triggers ?? [];
-        this.events = res.events ?? [];
+        this.kartabls = res.kartabls ?? [];
         this.conditions = res.conditions ?? [];
         this.actions = res.actions ?? [];
-
+        this.facts = res.facts ?? [];
         this.rebuildOptions();
-
-        if (this.editingId != null)
-        {
-          const stillThere = this.rows.find((x) => x.id === this.editingId);
-          if (!stillThere) this.cancelEdit();
-        }
+        if (this.editingId != null && !this.rows.some(x => x.id === this.editingId)) this.cancelEdit();
       },
-      error: (err: any) =>
-      {
-        this.error = err?.message ?? 'خطا در ارتباط با API';
-      },
+      error: err => this.error = err?.message ?? 'خطا در ارتباط با API',
     });
   }
 
-  private rebuildOptions()
-  {
-    this.stageOptions = (this.stages ?? []).map((s) => ({
-      id: s.id,
-      text: s.stageKey,
-      sub: s.titleFa ?? '',
-    }));
-
-    this.triggerOptions = (this.triggers ?? []).map((t) => ({
-      id: t.id,
-      text: t.triggerKey,
-      sub: t.titleFa ?? '',
-    }));
-
-    this.eventOptions = (this.events ?? []).map((e) => ({
-      id: e.id,
-      text: e.eventKey,
-      sub: e.titleFa ?? '',
-    }));
-
-    this.condOptions = (this.conditions ?? []).map((c) => ({
-      id: c.id,
-      text: c.conditionKey,
-      sub: c.titleFa ?? '',
-    }));
-
-    this.actionOptions = (this.actions ?? []).map((a) => ({
-      id: a.id,
-      text: a.actionKey,
-      sub: a.titleFa ?? '',
-    }));
+  private rebuildOptions() {
+    this.stageOptions = this.stages.map(s => ({ id: s.id, text: s.stageKey, sub: s.titleFa ?? '' }));
+    this.kartablOptions = this.kartabls.map(k => ({ id: k.id, text: k.kartablKey, sub: k.titleFa ?? '' }));
+    this.condOptions = this.conditions.map(c => ({ id: c.id, text: c.conditionKey, sub: c.titleFa ?? '' }));
+    this.actionOptions = this.actions.map(a => ({ id: a.id, text: a.actionKey, sub: a.titleFa ?? '' }));
+    this.factOptions = this.facts.map(f => ({ id: f.id, text: f.factKey, sub: f.meaning ?? '' }));
   }
 
-  get filtered(): Scenario[]
-  {
-    const q = (this.q ?? '').trim().toLowerCase();
+  get filtered(): Scenario[] {
+    const q = this.q.trim().toLowerCase();
     if (!q) return this.rows;
-    return (this.rows ?? []).filter((r) =>
-    {
-      const s = `${r.scenarioKey} ${(r.titleFa ?? '')} ${(r.ownerSubdomain ?? '')}`.toLowerCase();
-      return s.includes(q);
-    });
+    return this.rows.filter(r => `${r.scenarioKey} ${r.titleFa ?? ''} ${r.ownerSubdomain ?? ''}`.toLowerCase().includes(q));
   }
 
-  stageTitle(stageId: number | null | undefined): string
-  {
+  stageTitle(stageId: number | null | undefined): string {
     if (!stageId) return '—';
-    const s = (this.stages ?? []).find((x) => x.id === stageId);
+    const s = this.stages.find(x => x.id === stageId);
     return s ? `${s.stageKey}${s.titleFa ? ' — ' + s.titleFa : ''}` : '—';
   }
 
-  addScenario()
-  {
-    this.error = null;
+  kartablTitles(ids: number[] | null | undefined): string {
+    const list = ids ?? [];
+    if (!list.length) return '—';
+    return list.map(id => this.kartabls.find(k => k.id === id)?.kartablKey ?? String(id)).join(', ');
+  }
 
+  addScenario() {
+    this.error = null;
     const firstStageId = this.stages?.[0]?.id ?? null;
-    if (!firstStageId)
-    {
-      this.error = 'حداقل یک Stage لازم است.';
-      return;
-    }
-
-    const payload: Omit<Scenario, 'id'> = {
-      scenarioKey: 'NEW_SCENARIO',
-      stageId: firstStageId,
-      titleFa: 'سناریوی جدید',
-      description: '',
-      ownerSubdomain: '',
-      triggerId: undefined,
-      preconditionIds: [],
-      producedEventIds: [],
-      actions: [],
-      factChanges: [],
-    };
-
-    this.scenariosApi.create(payload).subscribe({
-      next: (created) =>
-      {
-        this.rows = [created, ...this.rows];
-        this.editRow(created.id);
-      },
-      error: (err: any) =>
-      {
-        this.error = err?.message ?? 'خطا در ایجاد';
-      },
-    });
+    if (!firstStageId) { this.error = 'حداقل یک Stage لازم است.'; return; }
+    const payload: Omit<Scenario, 'id'> = { scenarioKey: 'NEW_SCENARIO', stageId: firstStageId, titleFa: 'سناریوی جدید', description: '', ownerSubdomain: '', kartablIds: [], preconditionIds: [], actions: [], factChanges: [] };
+    this.scenariosApi.create(payload).subscribe({ next: created => { this.rows = [created, ...this.rows]; this.editRow(created.id); }, error: err => this.error = err?.message ?? 'خطا در ایجاد' });
   }
 
-  editRow(id: number)
-  {
+  editRow(id: number) {
     this.editingId = id;
-    const src = this.rows.find((x) => x.id === id);
-    if (!src)
-    {
-      this.edit = null;
-      return;
-    }
-
-    const clone = structuredClone(src) as any;
-
-    this.edit = {
-      id: clone.id,
-      scenarioKey: clone.scenarioKey,
-      titleFa: clone.titleFa,
-      description: clone.description,
-      ownerSubdomain: clone.ownerSubdomain,
-      stageId: clone.stageId ?? null,
-      triggerId: clone.triggerId ?? null,
-      preconditionIds: clone.preconditionIds ?? [],
-      producedEventIds: clone.producedEventIds ?? [],
-      actions: clone.actions ?? [],
-      factChanges: clone.factChanges ?? [],
-    };
-
-    const e = this.edit;
-    if (!e) return;
-
-    this.scenarioPreconditionIds = [...(e.preconditionIds ?? [])];
-    this.scenarioProducedEventIds = [...(e.producedEventIds ?? [])];
+    const src = this.rows.find(x => x.id === id);
+    if (!src) { this.edit = null; return; }
+    const clone = structuredClone(src) as Scenario;
+    this.edit = { ...clone, stageId: clone.stageId ?? null, kartablIds: clone.kartablIds ?? [], preconditionIds: clone.preconditionIds ?? [], actions: clone.actions ?? [], factChanges: clone.factChanges ?? [] };
+    this.scenarioPreconditionIds = [...(this.edit.preconditionIds ?? [])];
+    this.scenarioKartablIds = [...(this.edit.kartablIds ?? [])];
+    this.refreshFactChangesJson();
   }
 
-  cancelEdit()
-  {
-    this.editingId = null;
-    this.edit = null;
-    this.scenarioPreconditionIds = [];
-    this.scenarioProducedEventIds = [];
-  }
+  cancelEdit() { this.editingId = null; this.edit = null; this.scenarioPreconditionIds = []; this.scenarioKartablIds = []; this.factChangesJson = '[]'; }
 
-  saveEdit()
-  {
+  saveEdit() {
     if (!this.edit) return;
-
     this.error = null;
-
-    // sync arrays from UI
-    this.edit.preconditionIds = [...(this.scenarioPreconditionIds ?? [])];
-    this.edit.producedEventIds = [...(this.scenarioProducedEventIds ?? [])];
-
-    // sanitize
-    this.edit.scenarioKey = (this.edit.scenarioKey ?? '').trim();
-    this.edit.titleFa = (this.edit.titleFa ?? '').trim() || undefined;
-    this.edit.description = (this.edit.description ?? '').trim() || undefined;
-    this.edit.ownerSubdomain = (this.edit.ownerSubdomain ?? '').trim() || undefined;
-
-    if (!this.edit.scenarioKey)
-    {
-      this.error = 'Scenario Key الزامی است.';
-      return;
-    }
-    if (this.edit.stageId == null)
-    {
-      this.error = 'Stage الزامی است.';
-      return;
-    }
-
-    if (this.edit.triggerId == null) this.edit.triggerId = undefined;
-
+    this.edit.preconditionIds = [...this.scenarioPreconditionIds];
+    this.edit.kartablIds = [...this.scenarioKartablIds];
+    this.normalizeFactChangeSortOrder();
+    this.edit.scenarioKey = this.edit.scenarioKey.trim();
+    this.edit.titleFa = this.edit.titleFa?.trim() || undefined;
+    this.edit.description = this.edit.description?.trim() || undefined;
+    this.edit.ownerSubdomain = this.edit.ownerSubdomain?.trim() || undefined;
+    if (!this.edit.scenarioKey) { this.error = 'Scenario Key الزامی است.'; return; }
+    if (this.edit.stageId == null) { this.error = 'Stage الزامی است.'; return; }
     const id = this.edit.id;
-
-    const payload: Omit<Scenario, 'id'> = {
-      scenarioKey: this.edit.scenarioKey,
-      titleFa: this.edit.titleFa,
-      description: this.edit.description,
-      ownerSubdomain: this.edit.ownerSubdomain,
-      stageId: this.edit.stageId,
-      triggerId: this.edit.triggerId ?? undefined,
-      preconditionIds: this.edit.preconditionIds ?? [],
-      producedEventIds: this.edit.producedEventIds ?? [],
-      actions: (this.edit as any).actions ?? [],
-      factChanges: (this.edit as any).factChanges ?? [],
-    };
-
-    this.scenariosApi.update(id, payload).subscribe({
-      next: (updated) =>
-      {
-        const idx = this.rows.findIndex((x) => x.id === id);
-        if (idx >= 0) this.rows[idx] = updated;
-        this.cancelEdit();
-      },
-      error: (err: any) =>
-      {
-        this.error = err?.message ?? 'خطا در ویرایش';
-      },
-    });
+    const payload: Omit<Scenario, 'id'> = { scenarioKey: this.edit.scenarioKey, titleFa: this.edit.titleFa, description: this.edit.description, ownerSubdomain: this.edit.ownerSubdomain, stageId: this.edit.stageId, kartablIds: this.edit.kartablIds ?? [], preconditionIds: this.edit.preconditionIds ?? [], actions: this.edit.actions ?? [], factChanges: this.edit.factChanges ?? [] };
+    this.scenariosApi.update(id, payload).subscribe({ next: updated => { this.rows = this.rows.map(x => x.id === id ? updated : x); this.cancelEdit(); }, error: err => this.error = err?.message ?? 'خطا در ویرایش' });
   }
 
-  removeScenario(id: number)
-  {
+  addFactChange() {
+    if (!this.edit) return;
+    const factId = this.facts[0]?.id;
+    if (!factId) { this.error = 'برای FactChange حداقل یک Fact لازم است.'; return; }
+    this.edit.factChanges = [...(this.edit.factChanges ?? []), { factId, op: 'Set', value: '', sortOrder: (this.edit.factChanges ?? []).length + 1 }];
+    this.refreshFactChangesJson();
+  }
+
+  removeFactChange(index: number) {
+    if (!this.edit) return;
+    this.edit.factChanges = (this.edit.factChanges ?? []).filter((_: any, i: number) => i !== index);
+    this.normalizeFactChangeSortOrder();
+    this.refreshFactChangesJson();
+  }
+
+
+  onFactChangeRowChanged() {
+    this.normalizeFactChangeSortOrder();
+    this.refreshFactChangesJson();
+  }
+
+  refreshFactChangesJson() {
+    if (!this.edit) { this.factChangesJson = '[]'; return; }
+    this.factChangesJson = this.factChangesToJson(this.edit.factChanges ?? []);
+  }
+
+  applyFactChangesJson() {
+    if (!this.edit) return;
+    const rows = this.parseFactChangesJson(this.factChangesJson);
+    if (!rows) return;
+    this.edit.factChanges = rows;
+    this.normalizeFactChangeSortOrder();
+    this.refreshFactChangesJson();
+  }
+
+  private normalizeFactChangeSortOrder() {
+    if (!this.edit) return;
+    this.edit.factChanges = (this.edit.factChanges ?? []).map((x: any, i: number) => ({ ...x, sortOrder: i + 1 }));
+  }
+
+  private factChangesToJson(rows: any[]): string {
+    const body = (rows ?? []).map((fc: any, index: number) => ({
+      factKey: this.factKey(fc.factId),
+      op: fc.op ?? 'Set',
+      value: fc.value ?? '',
+      sortOrder: fc.sortOrder ?? index + 1,
+    }));
+    return JSON.stringify(body, null, 2);
+  }
+
+  private parseFactChangesJson(json: string): any[] | null {
+    try {
+      const data = JSON.parse(json || '[]');
+      const items = Array.isArray(data)
+        ? data
+        : Object.entries(data ?? {}).map(([factKey, value]) => {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+              const obj: any = value;
+              return { factKey, op: obj.op ?? 'Set', value: obj.value ?? '' };
+            }
+            return { factKey, op: 'Set', value };
+          });
+
+      const rows = items.map((item: any, index: number) => {
+        const factId = Number(item.factId ?? this.factIdByKey(String(item.factKey ?? '')));
+        if (!factId) throw new Error(`Fact not found: ${item.factKey ?? item.factId}`);
+        const op = String(item.op ?? 'Set');
+        if (!['Set', 'Unset', 'Inc', 'Dec'].includes(op)) throw new Error(`Invalid op: ${op}`);
+        const rawValue = item.value;
+        const value = rawValue == null ? '' : (typeof rawValue === 'string' ? rawValue : JSON.stringify(rawValue));
+        return { factId, op: op as any, value, sortOrder: Number(item.sortOrder ?? index + 1) };
+      });
+      return rows;
+    } catch (e: any) {
+      this.error = e?.message ?? 'JSON نامعتبر است.';
+      return null;
+    }
+  }
+
+  private factIdByKey(key: string): number | null {
+    return this.facts.find(f => f.factKey === key)?.id ?? null;
+  }
+
+  private factKey(id: number): string {
+    return this.facts.find(f => f.id === id)?.factKey ?? String(id);
+  }
+
+  addActionRef() {
+    if (!this.edit) return;
+    const actionId = this.actions[0]?.id;
+    if (!actionId) { this.error = 'برای ScenarioAction حداقل یک Action لازم است.'; return; }
+    this.edit.actions = [...(this.edit.actions ?? []), { actionId, paramsJson: '{}' }];
+  }
+
+  removeActionRef(index: number) {
+    if (!this.edit) return;
+    this.edit.actions = (this.edit.actions ?? []).filter((_: any, i: number) => i !== index);
+  }
+
+  factTitle(id: number): string { return this.facts.find(f => f.id === id)?.factKey ?? String(id); }
+  actionTitle(id: number): string { return this.actions.find(a => a.id === id)?.actionKey ?? String(id); }
+
+  removeScenario(id: number) {
     this.error = null;
-    this.scenariosApi.delete(id).subscribe({
-      next: () =>
-      {
-        this.rows = this.rows.filter((x) => x.id !== id);
-        if (this.editingId === id) this.cancelEdit();
-      },
-      error: (err: any) =>
-      {
-        this.error = err?.message ?? 'خطا در حذف';
-      },
-    });
+    this.scenariosApi.delete(id).subscribe({ next: () => { this.rows = this.rows.filter(x => x.id !== id); if (this.editingId === id) this.cancelEdit(); }, error: err => this.error = err?.message ?? 'خطا در حذف' });
   }
 }

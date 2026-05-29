@@ -1,0 +1,129 @@
+<div class="page" dir="rtl">
+  <div class="head">
+    <div>
+      <div class="title">State Transitions</div>
+      <div class="muted">
+        این صفحه مسیر اصلی مدل را با وضعیت موجودیت، اکشن و وضعیت مقصد تعریف می‌کند.
+      </div>
+      <div class="code-line">EntityState → Action → EntityState</div>
+    </div>
+    <button class="btn" (click)="load()" [disabled]="isLoading">Reload</button>
+  </div>
+
+  <div class="legacy-note">
+    شرط‌های بیزینسی روی EntityState.ConditionJson هستند و مسیرها در ActionStateTransition ثبت می‌شوند.
+  </div>
+
+  <div class="alert" *ngIf="error">{{ error }}</div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Add State Transition</h3>
+
+      <label>Scenario</label>
+      <select [(ngModel)]="form.scenarioId" (ngModelChange)="onScenarioChanged()">
+        <option [ngValue]="null">بدون سناریو...</option>
+        <option *ngFor="let s of scenarios" [ngValue]="s.id">{{ s.scenarioKey }} - {{ s.titleFa || '' }}</option>
+      </select>
+
+      <label>From State</label>
+      <select [(ngModel)]="form.fromStateId">
+        <option [ngValue]="null">بدون وضعیت ورودی...</option>
+        <option *ngFor="let s of states" [ngValue]="s.id">{{ s.stateKey }} - {{ s.titleFa || '' }}</option>
+      </select>
+      <div class="hint" *ngIf="form.fromStateId">{{ stateConditions(form.fromStateId) }}</div>
+
+      <label>Action</label>
+      <select [(ngModel)]="form.actionId">
+        <option [ngValue]="null">انتخاب...</option>
+        <option *ngFor="let a of actions" [ngValue]="a.id">{{ a.actionKey }} - {{ a.titleFa || '' }}</option>
+      </select>
+
+      <label>To State</label>
+      <select [(ngModel)]="form.toStateId">
+        <option [ngValue]="null">بدون وضعیت خروجی...</option>
+        <option *ngFor="let s of states" [ngValue]="s.id">{{ s.stateKey }} - {{ s.titleFa || '' }}</option>
+      </select>
+      <div class="hint" *ngIf="form.toStateId">{{ stateConditions(form.toStateId) }}</div>
+
+      <label>Decision</label>
+      <select [(ngModel)]="form.decisionId" (ngModelChange)="onDecisionChanged()">
+        <option [ngValue]="null">بدون Decision...</option>
+        <option *ngFor="let d of filteredDecisions()" [ngValue]="d.id">{{ d.decisionKey }} - {{ d.titleFa || '' }}</option>
+      </select>
+
+      <label>Decision Option</label>
+      <select [(ngModel)]="form.decisionOptionId">
+        <option [ngValue]="null">بدون Option...</option>
+        <option *ngFor="let o of filteredOptions()" [ngValue]="o.id">{{ o.optionKey }} - {{ o.titleFa || '' }}</option>
+      </select>
+
+      <label>LabelFa</label>
+      <input [(ngModel)]="form.labelFa" placeholder="اختیاری؛ مثلاً تایید" />
+
+      <label>SortOrder</label>
+      <input type="number" [(ngModel)]="form.sortOrder" />
+
+      <label>Description</label>
+      <textarea [(ngModel)]="form.description" rows="2"></textarea>
+
+      <button class="btn primary" (click)="add()">+ Add Transition</button>
+    </div>
+
+    <div class="card flow-help">
+      <h3>مدل جدید</h3>
+      <div class="flow-example">
+        <span class="state">State</span>
+        <span class="arrow">→</span>
+        <span class="action">Action</span>
+        <span class="arrow">→</span>
+        <span class="state">State</span>
+      </div>
+      <p>
+        هر State مشخص می‌کند موجودیت چه Factهایی دارد. هر Transition مشخص می‌کند کدام Action موجودیت را از یک State به State بعدی می‌برد.
+      </p>
+      <p>
+        برای انتخاب‌های کاربر، Decision و Option را روی همان Transition ثبت کن تا در Mermaid روی فلش تصمیم نمایش داده شود.
+      </p>
+      <div class="code-line">DaramadDecision →|Approve| ApproveAdmByDaramad</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Action State Transitions</h3>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Scenario</th>
+          <th>From State</th>
+          <th>Action</th>
+          <th>To State</th>
+          <th>Decision</th>
+          <th>Option</th>
+          <th>Label</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let t of transitions">
+          <td>{{ t.sortOrder }}</td>
+          <td>{{ scenarioLabel(t.scenarioId) }}</td>
+          <td>
+            {{ stateLabel(t.fromStateId) }}
+            <div class="small mono">{{ stateConditions(t.fromStateId) }}</div>
+          </td>
+          <td>{{ actionLabel(t.actionId) }}</td>
+          <td>
+            {{ stateLabel(t.toStateId) }}
+            <div class="small mono">{{ stateConditions(t.toStateId) }}</div>
+          </td>
+          <td>{{ decisionLabel(t.decisionId) }}</td>
+          <td>{{ optionLabel(t.decisionOptionId) }}</td>
+          <td>{{ t.labelFa || '—' }}</td>
+          <td><button class="btn danger" (click)="delete(t.id)">Delete</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

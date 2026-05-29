@@ -1,0 +1,53 @@
+<div class="page" dir="rtl">
+  <div class="head">
+    <div class="title">WorkItems</div>
+    <div class="tools"><button class="btn" (click)="reload()">Reload</button><button class="btn primary" (click)="add()">+ New WorkItem</button></div>
+  </div>
+  <div class="alert" *ngIf="error">{{ error }}</div>
+  <div class="alert ok" *ngIf="message">{{ message }}</div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-title">Runtime Items <span class="muted">{{ filtered.length }}</span></div>
+      <input class="inp" [value]="q" (input)="q = $any($event.target).value" placeholder="Search key/title/status/ref/case..." />
+      <table class="tbl">
+        <thead><tr><th>Key</th><th>Title</th><th>Status</th><th>Kartabl</th><th>Ref</th><th></th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of filtered" [class.active]="selected?.id === r.id">
+            <td class="mono">{{ r.workItemKey }}</td>
+            <td>{{ r.title || '—' }}</td>
+            <td class="mono">{{ r.caseStatus || '—' }}</td>
+            <td class="mono">{{ kartablTitle(r.currentKartablId) }}</td>
+            <td>{{ r.referenceNo || '—' }}</td>
+            <td class="right"><button class="btn sm" (click)="select(r)">Details</button> <button class="btn sm" (click)="editRow(r)">Edit</button> <button class="btn sm danger" (click)="remove(r)">Delete</button></td>
+          </tr>
+          <tr *ngIf="!filtered.length"><td colspan="6" class="muted center">WorkItem پیدا نشد.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" *ngIf="edit">
+      <div class="card-title">{{ edit.id ? 'Edit WorkItem' : 'Create WorkItem' }} <div class="tools"><button class="btn sm" (click)="cancel()">Cancel</button><button class="btn sm primary" (click)="save()">Save</button></div></div>
+      <div class="form">
+        <div class="row2"><div><div class="lbl">WorkItemKey</div><input class="inp mono" [value]="edit.workItemKey" (input)="edit.workItemKey = $any($event.target).value"></div><div><div class="lbl">OwnerSubdomain</div><input class="inp" [value]="edit.ownerSubdomain" (input)="edit.ownerSubdomain = $any($event.target).value"></div></div>
+        <div class="row2"><div><div class="lbl">Title</div><input class="inp" [value]="edit.title || ''" (input)="edit.title = $any($event.target).value"></div><div><div class="lbl">Current Kartabl</div><app-smart-select [options]="kartablOptions" [value]="edit.currentKartablId || null" (valueChange)="edit.currentKartablId = $event"></app-smart-select></div></div>
+        <div class="row2"><div><div class="lbl">CaseStatus</div><input class="inp mono" [value]="edit.caseStatus || ''" (input)="edit.caseStatus = $any($event.target).value"></div><div><div class="lbl">ReferenceNo</div><input class="inp" [value]="edit.referenceNo || ''" (input)="edit.referenceNo = $any($event.target).value"></div></div>
+        <div class="row2"><div><div class="lbl">CaseId</div><input class="inp" [value]="edit.caseId || ''" (input)="edit.caseId = $any($event.target).value"></div><div class="sync"><button class="btn" (click)="syncFactsFromFields()">Sync CaseStatus / Kartabl into FactsJson</button></div></div>
+        <div><div class="lbl">FactsJson</div><textarea class="txt mono" [value]="edit.factsJson || '{}'" (input)="edit.factsJson = $any($event.target).value"></textarea><div class="alert" *ngIf="jsonError">{{ jsonError }}</div></div>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="selected">
+      <div class="card-title">Details: <span class="mono">{{ selected.workItemKey }}</span></div>
+      <div class="facts mono"><pre>{{ prettyFacts(selected) }}</pre></div>
+      <div class="card-title small">Action history / Outbox rows</div>
+      <table class="tbl">
+        <thead><tr><th>Id</th><th>Action</th><th>Source</th><th>Status</th><th>Attempts</th><th>Error</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let a of actions"><td class="mono">{{ a.id }}</td><td class="mono">{{ a.actionId }}</td><td>{{ a.source }}</td><td class="mono">{{ a.status }}</td><td>{{ a.attemptCount }}</td><td>{{ a.lastError || '—' }}</td></tr>
+          <tr *ngIf="!actions.length"><td colspan="6" class="muted center">Action ثبت نشده است.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>

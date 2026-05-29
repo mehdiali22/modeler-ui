@@ -1,0 +1,9 @@
+<div class="page" dir="rtl">
+  <div class="head"><div class="title">Action Outbox</div><button class="btn primary" (click)="load()">Reload</button></div>
+  <div class="alert" *ngIf="error">{{ error }}</div>
+  <section class="card"><div class="row2"><div><div class="lbl">Source</div><input class="inp" [value]="source" (input)="source = $any($event.target).value"></div><div><div class="lbl">ActionId</div><input class="inp" [value]="actionId" (input)="actionId = $any($event.target).value"></div></div><div class="row2"><div><div class="lbl">Take</div><input class="inp" [value]="take" (input)="take = $any($event.target).value"></div><div><div class="lbl">Failed Error</div><input class="inp" [value]="failedError" (input)="failedError = $any($event.target).value"></div></div></section>
+  <section class="card"><div class="card-title">Pending actions</div><table class="tbl"><thead><tr><th>Id</th><th>WorkItem</th><th>Action</th><th>Source</th><th>Scenario</th><th>Option</th><th>Attempts</th><th>Params</th><th></th></tr></thead><tbody>
+    <tr *ngFor="let r of rows"><td>{{ r.id }}</td><td>{{ r.workItemId }}</td><td>{{ r.actionId }}</td><td>{{ r.source }}</td><td>{{ r.sourceScenarioId }}</td><td>{{ r.sourceDecisionOptionId ?? '—' }}</td><td>{{ r.attemptCount }}</td><td class="mono">{{ r.paramsJson || '—' }}</td><td class="right"><button class="btn sm primary" (click)="done(r)">Done</button> <button class="btn sm danger" (click)="failed(r)">Failed</button> <button class="btn sm" (click)="retry(r)">Retry</button></td></tr>
+    <tr *ngIf="!rows.length"><td colspan="9" class="muted center">Pending action وجود ندارد.</td></tr>
+  </tbody></table></section>
+</div>

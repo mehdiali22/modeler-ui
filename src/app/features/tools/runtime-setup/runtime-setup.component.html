@@ -1,0 +1,13 @@
+<div class="page" dir="rtl">
+  <div class="head"><div class="title">Runtime Setup</div><div class="tools"><button class="btn" (click)="reload()">Reload</button><button class="btn primary" [disabled]="busy" (click)="createMinimum()">Create minimum runtime data</button></div></div>
+  <div class="alert" *ngIf="error">{{ error }}</div><div class="alert ok" *ngIf="message">{{ message }}</div>
+  <section class="card">
+    <div class="card-title">Checklist دیتابیس خالی</div>
+    <table class="tbl"><thead><tr><th>Item</th><th>Status</th><th>توضیح</th></tr></thead><tbody>
+      <tr><td class="mono">Artifact: Case</td><td>{{ hasCaseArtifact ? '✅' : '❌' }}</td><td>برای ساخت Factهای Runtime استفاده می‌شود.</td></tr>
+      <tr><td class="mono">Fact: CaseStatus</td><td>{{ hasFact('CaseStatus') ? '✅' : '❌' }}</td><td>String؛ وضعیت پرونده.</td></tr>
+      <tr><td class="mono">Fact: CurrentKartablId</td><td>{{ hasFact('CurrentKartablId') ? '✅' : '❌' }}</td><td>Int؛ کارتابل فعلی پرونده.</td></tr>
+      <tr><td class="mono">At least one Kartabl</td><td>{{ hasKartabl ? '✅' : '❌' }}</td><td>برای ساخت WorkItem و تست صف کارتابل لازم است.</td></tr>
+    </tbody></table>
+  </section>
+</div>

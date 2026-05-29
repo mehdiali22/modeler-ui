@@ -1,0 +1,209 @@
+.page {
+  padding: 12px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.6fr;
+  gap: 12px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.card-title {
+  font-weight: 900;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tbl th, .tbl td {
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  padding: 8px;
+  text-align: right;
+}
+
+tr.active {
+  background: rgba(0,0,0,.03);
+}
+
+.btn {
+  border: 1px solid rgba(0,0,0,.15);
+  background: #fff;
+  padding: 7px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn.sm {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.btn.primary {
+  font-weight: 900;
+  border-color: rgba(0,0,0,.25);
+}
+
+.btn.danger {
+  border-color: rgba(180,0,0,.3);
+}
+
+.inp {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.muted {
+  opacity: .65;
+}
+
+.center {
+  text-align: center;
+}
+
+.right {
+  white-space: nowrap;
+  text-align: left;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lbl {
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.lbl.big {
+  font-size: 16px;
+}
+
+.hr {
+  border: none;
+  border-top: 1px solid rgba(0,0,0,.08);
+  margin: 8px 0;
+}
+
+.dec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.decision {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.dec-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.act-block {
+  margin-top: 10px;
+}
+
+.act {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.hint {
+  font-size: 12px;
+  margin-top: 6px;
+}
+/*--------------------new--------*/
+.inp {
+  width: 100%;
+  box-sizing: border-box;   // ✅ مهم
+}
+
+/* جلوگیری از overflow داخل grid */
+.row2 > * {
+  min-width: 0;             // ✅ مهم
+}
+
+/* اطمینان از اینکه کامپوننت‌های سفارشی مثل input رفتار کنن */
+app-smart-select,
+app-ref-multi-select {
+  display: block;
+  width: 100%;
+}
+
+/* responsive: وقتی فضا کم شد، دو ستون تبدیل به تک‌ستون بشه */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;   // لیست بالا، ادیتور پایین
+  }
+
+  .row2 {
+    grid-template-columns: 1fr;   // ✅ فیلدها زیر هم
+  }
+}
+
+.ok{border-color:rgba(0,120,0,.2);background:rgba(0,120,0,.06)}

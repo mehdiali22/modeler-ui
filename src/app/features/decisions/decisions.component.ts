@@ -2,12 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { Scenario, Condition, ActionDefinition, EventDefinition, Fact } from '../../core/types';
+import { Scenario, Condition, ActionDefinition, Fact } from '../../core/types';
 
 import { ScenarioApiService } from '../../core/api/scenario-api.service';
 import { ConditionApiService } from '../../core/api/condition-api.service';
 import { ActionApiService } from '../../core/api/action-api.service';
-import { EventApiService } from '../../core/api/event-api.service';
 import { FactApiService } from '../../core/api/fact-api.service';
 
 import { ScenarioDecisionApiService, ScenarioDecisionDto } from '../../core/api/scenario-decision-api.service';
@@ -20,7 +19,6 @@ import { RefMultiSelectComponent, RefOption } from '../../shared/ref-multi-selec
 type OptionEdit = ScenarioDecisionOptionDto & {
   conditionIds: number[];
   actionIds: number[];
-  producedEventIds: number[];
 };
 
 @Component({
@@ -41,11 +39,9 @@ export class DecisionsComponent implements OnInit
   // catalogs
   conditions: Condition[] = [];
   actions: ActionDefinition[] = [];
-  events: EventDefinition[] = [];
   facts: Fact[] = [];
 
   conditionOptions: RefOption[] = [];
-  eventOptions: RefOption[] = [];
   actionOptions: RefOption[] = [];
   factOptions: SmartOption[] = [];
 
@@ -61,12 +57,12 @@ export class DecisionsComponent implements OnInit
 
   // option fact changes
   optionFactChanges: DecisionOptionFactChangeDto[] = [];
+  optionFactChangesJson = '[]';
 
   constructor(
     private scenariosApi: ScenarioApiService,
     private conditionsApi: ConditionApiService,
     private actionsApi: ActionApiService,
-    private eventsApi: EventApiService,
     private factsApi: FactApiService,
 
     private decisionsApi: ScenarioDecisionApiService,
@@ -87,7 +83,6 @@ export class DecisionsComponent implements OnInit
       scenarios: this.scenariosApi.list(),
       conditions: this.conditionsApi.list(),
       actions: this.actionsApi.list(),
-      events: this.eventsApi.list(),
       facts: this.factsApi.list(),
     }).subscribe({
       next: (res) =>
@@ -95,7 +90,6 @@ export class DecisionsComponent implements OnInit
         this.scenarios = res.scenarios ?? [];
         this.conditions = res.conditions ?? [];
         this.actions = res.actions ?? [];
-        this.events = res.events ?? [];
         this.facts = res.facts ?? [];
 
         this.scenarioOptions = this.scenarios.map((s) => ({
@@ -114,12 +108,6 @@ export class DecisionsComponent implements OnInit
           id: a.id,
           text: a.actionKey,
           sub: a.titleFa ?? '',
-        }));
-
-        this.eventOptions = this.events.map((e) => ({
-          id: e.id,
-          text: e.eventKey,
-          sub: e.titleFa ?? '',
         }));
 
         // ✅ Fact in your types.ts has: factKey + meaning (no titleFa)
@@ -333,7 +321,6 @@ export class DecisionsComponent implements OnInit
       titleFa: 'گزینه جدید',
       conditionIdsJson: '[]',
       actionIdsJson: '[]',
-      producedEventIdsJson: '[]',
     };
 
     this.error = null;
@@ -365,7 +352,6 @@ export class DecisionsComponent implements OnInit
       ...structuredClone(o),
       conditionIds: this.parseIds(o.conditionIdsJson),
       actionIds: this.parseIds(o.actionIdsJson),
-      producedEventIds: this.parseIds(o.producedEventIdsJson),
     };
 
     this.reloadOptionFactChanges();
@@ -399,7 +385,6 @@ export class DecisionsComponent implements OnInit
       titleFa: o.titleFa,
       conditionIdsJson: JSON.stringify(o.conditionIds ?? []),
       actionIdsJson: JSON.stringify(o.actionIds ?? []),
-      producedEventIdsJson: JSON.stringify(o.producedEventIds ?? []),
     };
 
     this.error = null;
@@ -440,6 +425,7 @@ export class DecisionsComponent implements OnInit
     if (!this.selectedOptionId)
     {
       this.optionFactChanges = [];
+      this.optionFactChangesJson = '[]';
       return;
     }
 
@@ -448,6 +434,7 @@ export class DecisionsComponent implements OnInit
       next: (rows: DecisionOptionFactChangeDto[]) =>
       {
         this.optionFactChanges = rows ?? [];
+        this.refreshOptionFactChangesJson();
       },
       error: (err: unknown) =>
       {
@@ -471,6 +458,7 @@ export class DecisionsComponent implements OnInit
       factId: this.facts[0].id,
       op: 'Set',
       value: '',
+      sortOrder: this.optionFactChanges.length + 1,
     };
 
     this.error = null;
@@ -478,6 +466,8 @@ export class DecisionsComponent implements OnInit
       next: (created: DecisionOptionFactChangeDto) =>
       {
         this.optionFactChanges = [...this.optionFactChanges, created];
+        this.normalizeOptionFactChangeSortOrder();
+        this.refreshOptionFactChangesJson();
       },
       error: (err: unknown) =>
       {
@@ -493,6 +483,7 @@ export class DecisionsComponent implements OnInit
       factId: row.factId,
       op: row.op,
       value: row.value,
+      sortOrder: row.sortOrder ?? 0,
     };
 
     this.error = null;
@@ -501,6 +492,8 @@ export class DecisionsComponent implements OnInit
       {
         const idx = this.optionFactChanges.findIndex((x) => x.id === updated.id);
         if (idx >= 0) this.optionFactChanges[idx] = updated;
+        this.normalizeOptionFactChangeSortOrder();
+        this.refreshOptionFactChangesJson();
       },
       error: (err: unknown) =>
       {
@@ -516,6 +509,8 @@ export class DecisionsComponent implements OnInit
       next: () =>
       {
         this.optionFactChanges = this.optionFactChanges.filter((x) => x.id !== id);
+        this.normalizeOptionFactChangeSortOrder();
+        this.refreshOptionFactChangesJson();
       },
       error: (err: unknown) =>
       {
@@ -540,6 +535,106 @@ export class DecisionsComponent implements OnInit
     {
       return [];
     }
+  }
+
+
+  onOptionFactChangeRowChanged(row?: DecisionOptionFactChangeDto): void
+  {
+    this.normalizeOptionFactChangeSortOrder();
+    this.refreshOptionFactChangesJson();
+  }
+
+  refreshOptionFactChangesJson(): void
+  {
+    this.optionFactChangesJson = this.factChangesToJson(this.optionFactChanges ?? []);
+  }
+
+  applyOptionFactChangesJson(): void
+  {
+    if (!this.selectedOptionId) return;
+    const rows = this.parseFactChangesJson(this.optionFactChangesJson);
+    if (!rows) return;
+
+    // Replace current option-level fact changes with the JSON rows.
+    const deletes = [...this.optionFactChanges];
+    const createNext = (index: number) => {
+      if (index >= rows.length) {
+        this.reloadOptionFactChanges();
+        return;
+      }
+      this.ofcApi.create({ scenarioDecisionOptionId: this.selectedOptionId!, ...rows[index] } as any).subscribe({
+        next: () => createNext(index + 1),
+        error: (err: unknown) => this.error = this.errMsg(err, 'خطا در ایجاد FactChange از JSON'),
+      });
+    };
+
+    const deleteNext = (index: number) => {
+      if (index >= deletes.length) {
+        createNext(0);
+        return;
+      }
+      this.ofcApi.delete(deletes[index].id).subscribe({
+        next: () => deleteNext(index + 1),
+        error: (err: unknown) => this.error = this.errMsg(err, 'خطا در جایگزینی FactChangeها'),
+      });
+    };
+
+    deleteNext(0);
+  }
+
+  private normalizeOptionFactChangeSortOrder(): void
+  {
+    this.optionFactChanges = (this.optionFactChanges ?? []).map((x, i) => ({ ...x, sortOrder: i + 1 }));
+  }
+
+  private factChangesToJson(rows: DecisionOptionFactChangeDto[]): string
+  {
+    const body = (rows ?? []).map((fc, index) => ({
+      factKey: this.factKey(fc.factId),
+      op: fc.op ?? 'Set',
+      value: fc.value ?? '',
+      sortOrder: fc.sortOrder ?? index + 1,
+    }));
+    return JSON.stringify(body, null, 2);
+  }
+
+  private parseFactChangesJson(json: string): Array<{ factId: number; op: 'Set' | 'Unset' | 'Inc' | 'Dec'; value?: string; sortOrder?: number }> | null
+  {
+    try {
+      const data = JSON.parse(json || '[]');
+      const items = Array.isArray(data)
+        ? data
+        : Object.entries(data ?? {}).map(([factKey, value]) => {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+              const obj: any = value;
+              return { factKey, op: obj.op ?? 'Set', value: obj.value ?? '' };
+            }
+            return { factKey, op: 'Set', value };
+          });
+
+      return items.map((item: any, index: number) => {
+        const factId = Number(item.factId ?? this.factIdByKey(String(item.factKey ?? '')));
+        if (!factId) throw new Error(`Fact not found: ${item.factKey ?? item.factId}`);
+        const op = String(item.op ?? 'Set');
+        if (!['Set', 'Unset', 'Inc', 'Dec'].includes(op)) throw new Error(`Invalid op: ${op}`);
+        const rawValue = item.value;
+        const value = rawValue == null ? '' : (typeof rawValue === 'string' ? rawValue : JSON.stringify(rawValue));
+        return { factId, op: op as any, value, sortOrder: Number(item.sortOrder ?? index + 1) };
+      });
+    } catch (e: any) {
+      this.error = e?.message ?? 'JSON نامعتبر است.';
+      return null;
+    }
+  }
+
+  private factIdByKey(key: string): number | null
+  {
+    return this.facts.find(f => f.factKey === key)?.id ?? null;
+  }
+
+  private factKey(id: number): string
+  {
+    return this.facts.find(f => f.id === id)?.factKey ?? String(id);
   }
 
   private errMsg(err: unknown, fallback: string): string

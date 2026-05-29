@@ -13,7 +13,6 @@ export type ScenarioDecisionOptionDto = {
 
   conditionIdsJson?: string;
   actionIdsJson?: string;
-  producedEventIdsJson?: string;
 };
 
 @Injectable({ providedIn: 'root' })

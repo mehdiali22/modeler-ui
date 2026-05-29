@@ -78,6 +78,19 @@ reload()
   }
 
 
+  actorKeyById(id?: number | null): string
+  {
+    if (!id) return '—';
+    return this.actors.find(a => a.id === id)?.actorKey ?? '—';
+  }
+
+  artifactKeyById(id?: number | null): string
+  {
+    if (!id) return '—';
+    return this.artifacts.find(a => a.id === id)?.artifactKey ?? '—';
+  }
+
+
   get filtered()
   {
     const q = this.q.trim().toLowerCase();
@@ -95,7 +108,7 @@ reload()
     titleFa: 'اکشن جدید',
     targetArtifactId: this.artifacts[0]?.id,
     executorKind: 'System',
-    executorActorId: undefined,
+    executorActorId: this.actors[0]?.id,
     defaultParamsJson: '',
   };
 
@@ -132,7 +145,6 @@ reload()
     this.edit.titleFa = (this.edit.titleFa ?? '').trim();
     this.edit.defaultParamsJson = (this.edit.defaultParamsJson ?? '').trim();
 
-        if (this.edit.executorKind !== 'Human') this.edit.executorActorId = undefined;
     const id = this.edit.id as number;
 
 const payload: Omit<ActionDefinition, 'id'> = {

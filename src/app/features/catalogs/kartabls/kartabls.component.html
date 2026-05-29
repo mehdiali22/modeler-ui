@@ -1,0 +1,38 @@
+<div class="page" dir="rtl">
+  <section class="card">
+    <div class="head">
+      <div class="title">Kartabls</div>
+      <button class="btn" type="button" (click)="load()">Reload</button>
+    </div>
+
+    <div class="form">
+      <div class="row2">
+        <div><div class="lbl">KartablKey</div><input class="inp mono" [value]="draft.kartablKey" (input)="draft.kartablKey = $any($event.target).value" placeholder="IncomeQueue" /></div>
+        <div><div class="lbl">عنوان</div><input class="inp" [value]="draft.titleFa" (input)="draft.titleFa = $any($event.target).value" /></div>
+      </div>
+      <div class="row2">
+        <div><div class="lbl">OwnerSubdomain</div><input class="inp" [value]="draft.ownerSubdomain" (input)="draft.ownerSubdomain = $any($event.target).value" placeholder="case" /></div>
+        <div><div class="lbl">توضیحات</div><input class="inp" [value]="draft.description" (input)="draft.description = $any($event.target).value" /></div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" type="button" (click)="reset()">ریست</button>
+        <button class="btn primary" type="button" (click)="submit()">{{ editingId === null ? 'افزودن' : 'ذخیره' }}</button>
+      </div>
+      <div class="alert" *ngIf="error">{{ error }}</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">لیست</div>
+    <table class="tbl">
+      <thead><tr><th>Key</th><th>عنوان</th><th>Owner</th><th>توضیحات</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of rows">
+          <td class="mono"><b>{{ r.kartablKey }}</b></td><td>{{ r.titleFa || '—' }}</td><td class="mono">{{ r.ownerSubdomain || '—' }}</td><td>{{ r.description || '—' }}</td>
+          <td class="right"><button class="btn sm" (click)="edit(r)">Edit</button> <button class="btn sm danger" (click)="remove(r)">Delete</button></td>
+        </tr>
+        <tr *ngIf="!rows.length"><td colspan="5" class="muted center">رکوردی ثبت نشده است.</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
