@@ -1,0 +1,37 @@
+<div class="page" dir="rtl">
+  <div class="head">
+    <div>
+      <div class="title">Flow Links</div>
+      <div class="muted">رابطه‌های صریح ترتیب/جریان؛ Mermaid فقط از این لینک‌ها و رابطه‌های واقعی مدل استفاده می‌کند.</div>
+    </div>
+    <button class="btn" (click)="load()">Reload</button>
+  </div>
+
+  <div class="alert" *ngIf="error">{{ error }}</div>
+  <div class="card">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>LinkKey</th>
+          <th>Source</th>
+          <th>Target</th>
+          <th>Label</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of rows">
+          <td>{{ r.sortOrder }}</td>
+          <td class="mono">{{ r.linkKey }}</td>
+          <td><span class="badge">{{ r.sourceType }}</span> <span class="mono">{{ r.sourceKey || r.sourceId }}</span></td>
+          <td><span class="badge">{{ r.targetType }}</span> <span class="mono">{{ r.targetKey || r.targetId }}</span></td>
+          <td>{{ r.labelFa || '—' }}</td>
+          <td>{{ r.description || '—' }}</td>
+        </tr>
+        <tr *ngIf="!rows.length && !isLoading"><td colspan="6" class="center muted">رکوردی ثبت نشده است.</td></tr>
+        <tr *ngIf="isLoading"><td colspan="6" class="center muted">در حال بارگذاری...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

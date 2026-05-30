@@ -3,33 +3,13 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 
-import {
-  ActionDefinition,
-  ActionStateTransition,
-  EntityState,
-  Id,
-  Scenario,
-  ScenarioDecision,
-  ScenarioDecisionOption,
-} from '../../core/types';
+import { ActionDefinition, Id, Process, Scenario, Stage, SubProcess } from '../../core/types';
 import { ActionApiService } from '../../core/api/action-api.service';
-import { ActionStateTransitionApiService } from '../../core/api/action-state-transition-api.service';
-import { EntityStateApiService } from '../../core/api/entity-state-api.service';
+import { LevelFlowApiService, FlowLevel } from '../../core/api/level-flow-api.service';
+import { ProcessApiService } from '../../core/api/process-api.service';
 import { ScenarioApiService } from '../../core/api/scenario-api.service';
-import { ScenarioDecisionApiService } from '../../core/api/scenario-decision-api.service';
-import { ScenarioDecisionOptionApiService } from '../../core/api/scenario-decision-option-api.service';
-
-type TransitionForm = {
-  scenarioId: Id | null;
-  actionId: Id | null;
-  fromStateId: Id | null;
-  toStateId: Id | null;
-  decisionId: Id | null;
-  decisionOptionId: Id | null;
-  labelFa: string;
-  sortOrder: number;
-  description: string;
-};
+import { StageApiService } from '../../core/api/stage-api.service';
+import { SubProcessApiService } from '../../core/api/sub-process-api.service';
 
 @Component({
   selector: 'app-level-flows',
@@ -39,196 +19,122 @@ type TransitionForm = {
   styleUrls: ['./level-flows.component.scss'],
 })
 export class LevelFlowsComponent implements OnInit {
-  states: EntityState[] = [];
-  transitions: ActionStateTransition[] = [];
-  actions: ActionDefinition[] = [];
-  scenarios: Scenario[] = [];
-  decisions: ScenarioDecision[] = [];
-  options: ScenarioDecisionOption[] = [];
+  levels: { key: FlowLevel; title: string; ownerTitle: string }[] = [
+    { key: 'process', title: 'Process Ports/Links', ownerTitle: 'Process' },
+    { key: 'sub-process', title: 'SubProcess Ports/Links', ownerTitle: 'SubProcess' },
+    { key: 'stage', title: 'Stage Ports/Links', ownerTitle: 'Stage' },
+    { key: 'scenario', title: 'Scenario Ports/Links', ownerTitle: 'Scenario' },
+    { key: 'action', title: 'Action Ports/Links', ownerTitle: 'Action' },
+  ];
 
-  form: TransitionForm = this.emptyForm();
+  active: FlowLevel = 'sub-process';
+  owners: Record<FlowLevel, any[]> = { process: [], 'sub-process': [], stage: [], scenario: [], action: [] };
+  ports: any[] = [];
+  links: any[] = [];
   error: string | null = null;
   isLoading = false;
 
+  portForm: any = { ownerId: null, portKey: '', titleFa: '', direction: 'Out', payloadSchemaJson: '{}', sortOrder: 10, description: '' };
+  linkForm: any = { linkKey: '', fromPortId: null, toPortId: null, conditionIdsJson: '[]', labelFa: '', sortOrder: 10, description: '', scopeType: 'Stage', scopeId: null };
+
   constructor(
-    private statesApi: EntityStateApiService,
-    private transitionsApi: ActionStateTransitionApiService,
-    private actionsApi: ActionApiService,
-    private scenariosApi: ScenarioApiService,
-    private decisionsApi: ScenarioDecisionApiService,
-    private optionsApi: ScenarioDecisionOptionApiService,
+    private flows: LevelFlowApiService,
+    private processes: ProcessApiService,
+    private subProcesses: SubProcessApiService,
+    private stages: StageApiService,
+    private scenarios: ScenarioApiService,
+    private actions: ActionApiService,
   ) {}
 
   ngOnInit(): void {
     forkJoin({
-      states: this.statesApi.list(),
-      transitions: this.transitionsApi.list(),
-      actions: this.actionsApi.list(),
-      scenarios: this.scenariosApi.list(),
-      decisions: this.decisionsApi.list(),
-      options: this.optionsApi.list(),
+      processes: this.processes.list(),
+      subProcesses: this.subProcesses.list(),
+      stages: this.stages.list(),
+      scenarios: this.scenarios.list(),
+      actions: this.actions.list(),
     }).subscribe({
       next: data => {
-        this.states = data.states;
-        this.transitions = data.transitions;
-        this.actions = data.actions;
-        this.scenarios = data.scenarios;
-        this.decisions = data.decisions;
-        this.options = data.options;
+        this.owners.process = data.processes;
+        this.owners['sub-process'] = data.subProcesses;
+        this.owners.stage = data.stages;
+        this.owners.scenario = data.scenarios;
+        this.owners.action = data.actions;
+        this.load();
       },
-      error: err => this.error = err?.message ?? 'خطا در خواندن داده‌های State Transition',
+      error: err => { this.error = err?.message ?? 'خطا در خواندن داده‌های پایه'; },
     });
+  }
+
+  setLevel(level: FlowLevel): void {
+    this.active = level;
+    this.resetForms();
+    this.load();
   }
 
   load(): void {
     this.isLoading = true;
     this.error = null;
-
-    forkJoin({
-      states: this.statesApi.list(),
-      transitions: this.transitionsApi.list(),
-    }).subscribe({
-      next: data => {
-        this.states = data.states;
-        this.transitions = data.transitions;
-        this.isLoading = false;
-      },
-      error: err => {
-        this.error = err?.message ?? 'خطا در خواندن State Transitionها';
-        this.isLoading = false;
-      },
+    forkJoin({ ports: this.flows.listPorts(this.active), links: this.flows.listLinks(this.active) }).subscribe({
+      next: x => { this.ports = x.ports; this.links = x.links; this.isLoading = false; },
+      error: err => { this.error = err?.message ?? 'خطا در خواندن Ports/Links'; this.isLoading = false; },
     });
   }
 
-  add(): void {
-    if (!this.form.actionId) {
-      this.error = 'Action اجباری است.';
-      return;
-    }
-
-    this.transitionsApi.create({
-      scenarioId: this.form.scenarioId ? Number(this.form.scenarioId) : null,
-      actionId: Number(this.form.actionId),
-      fromStateId: this.form.fromStateId ? Number(this.form.fromStateId) : null,
-      toStateId: this.form.toStateId ? Number(this.form.toStateId) : null,
-      decisionId: this.form.decisionId ? Number(this.form.decisionId) : null,
-      decisionOptionId: this.form.decisionOptionId ? Number(this.form.decisionOptionId) : null,
-      labelFa: this.form.labelFa,
-      sortOrder: Number(this.form.sortOrder || 0),
-      description: this.form.description,
-    }).subscribe({
-      next: () => {
-        this.form = this.emptyForm();
-        this.load();
-      },
-      error: err => this.error = err?.message ?? 'خطا در ثبت State Transition',
-    });
+  addPort(): void {
+    if (!this.portForm.ownerId || !this.portForm.portKey) return;
+    this.flows.createPort(this.active, Number(this.portForm.ownerId), {
+      portKey: this.portForm.portKey,
+      titleFa: this.portForm.titleFa,
+      direction: this.portForm.direction,
+      payloadSchemaJson: this.portForm.payloadSchemaJson || '{}',
+      sortOrder: Number(this.portForm.sortOrder || 0),
+      description: this.portForm.description,
+    } as any).subscribe({ next: () => { this.resetPortForm(); this.load(); }, error: err => this.error = err?.message ?? 'خطا در ثبت Port' });
   }
 
-  delete(id: Id): void {
-    if (!confirm('State Transition حذف شود؟')) return;
-
-    this.transitionsApi.delete(id).subscribe({
-      next: () => this.load(),
-      error: err => this.error = err?.message ?? 'خطا در حذف State Transition',
-    });
+  deletePort(id: Id): void {
+    if (!confirm('Port حذف شود؟')) return;
+    this.flows.deletePort(this.active, id).subscribe({ next: () => this.load(), error: err => this.error = err?.message ?? 'خطا در حذف Port' });
   }
 
-  filteredDecisions(): ScenarioDecision[] {
-    if (!this.form.scenarioId) return this.decisions;
-
-    return this.decisions.filter(d => d.scenarioId === Number(this.form.scenarioId));
-  }
-
-  filteredOptions(): ScenarioDecisionOption[] {
-    if (!this.form.decisionId) return this.options;
-
-    return this.options.filter(o => o.scenarioDecisionId === Number(this.form.decisionId));
-  }
-
-  onScenarioChanged(): void {
-    if (this.form.decisionId && !this.filteredDecisions().some(d => d.id === Number(this.form.decisionId))) {
-      this.form.decisionId = null;
-      this.form.decisionOptionId = null;
-    }
-  }
-
-  onDecisionChanged(): void {
-    if (this.form.decisionOptionId && !this.filteredOptions().some(o => o.id === Number(this.form.decisionOptionId))) {
-      this.form.decisionOptionId = null;
-    }
-  }
-
-  scenarioLabel(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const row = this.scenarios.find(x => x.id === id);
-    return row ? `${row.scenarioKey} - ${row.titleFa || ''}` : String(id);
-  }
-
-  actionLabel(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const row = this.actions.find(x => x.id === id);
-    return row ? `${row.actionKey} - ${row.titleFa || ''}` : String(id);
-  }
-
-  stateLabel(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const row = this.states.find(x => x.id === id);
-    return row ? `${row.stateKey} - ${row.titleFa || ''}` : String(id);
-  }
-
-  decisionLabel(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const row = this.decisions.find(x => x.id === id);
-    return row ? `${row.decisionKey} - ${row.titleFa || ''}` : String(id);
-  }
-
-  optionLabel(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const row = this.options.find(x => x.id === id);
-    return row ? `${row.optionKey} - ${row.titleFa || ''}` : String(id);
-  }
-
-  stateConditions(id: Id | null | undefined): string {
-    if (!id) return '—';
-
-    const state = this.states.find(x => x.id === id);
-    if (!state?.conditionJson || state.conditionJson === '[]') return '—';
-
-    try {
-      const parsed = JSON.parse(state.conditionJson);
-      if (!Array.isArray(parsed)) return state.conditionJson;
-
-      return parsed
-        .map((x: any) => `${x.factKey ?? 'Fact#' + x.factId} ${x.op ?? '='} ${this.valueToText(x.value)}`)
-        .join(' | ');
-    } catch {
-      return state.conditionJson;
-    }
-  }
-
-  private valueToText(value: any): string {
-    if (Array.isArray(value)) return value.join(',');
-    if (value === null || value === undefined) return '';
-    return String(value);
-  }
-
-  private emptyForm(): TransitionForm {
-    return {
-      scenarioId: null,
-      actionId: null,
-      fromStateId: null,
-      toStateId: null,
-      decisionId: null,
-      decisionOptionId: null,
-      labelFa: '',
-      sortOrder: 10,
-      description: '',
+  addLink(): void {
+    if (!this.linkForm.linkKey || !this.linkForm.fromPortId || !this.linkForm.toPortId) return;
+    const payload: any = {
+      linkKey: this.linkForm.linkKey,
+      fromPortId: Number(this.linkForm.fromPortId),
+      toPortId: Number(this.linkForm.toPortId),
+      conditionIdsJson: this.linkForm.conditionIdsJson || '[]',
+      labelFa: this.linkForm.labelFa,
+      sortOrder: Number(this.linkForm.sortOrder || 0),
+      description: this.linkForm.description,
     };
+    if (this.active === 'action') {
+      payload.scopeType = this.linkForm.scopeType;
+      payload.scopeId = this.linkForm.scopeId ? Number(this.linkForm.scopeId) : null;
+    }
+    this.flows.createLink(this.active, payload).subscribe({ next: () => { this.resetLinkForm(); this.load(); }, error: err => this.error = err?.message ?? 'خطا در ثبت Link' });
   }
+
+  deleteLink(id: Id): void {
+    if (!confirm('Link حذف شود؟')) return;
+    this.flows.deleteLink(this.active, id).subscribe({ next: () => this.load(), error: err => this.error = err?.message ?? 'خطا در حذف Link' });
+  }
+
+  ownerLabel(owner: any): string {
+    return owner.processKey || owner.subProcessKey || owner.stageKey || owner.scenarioKey || owner.actionKey || owner.id;
+  }
+
+  ownerNameById(id: Id): string {
+    const owner = this.owners[this.active].find(x => x.id === id);
+    return owner ? this.ownerLabel(owner) : String(id);
+  }
+
+  portLabel(port: any): string {
+    return `${port.direction} · ${port.portKey} · ${port.titleFa || ''}`;
+  }
+
+  private resetForms(): void { this.resetPortForm(); this.resetLinkForm(); }
+  private resetPortForm(): void { this.portForm = { ownerId: null, portKey: '', titleFa: '', direction: 'Out', payloadSchemaJson: '{}', sortOrder: 10, description: '' }; }
+  private resetLinkForm(): void { this.linkForm = { linkKey: '', fromPortId: null, toPortId: null, conditionIdsJson: '[]', labelFa: '', sortOrder: 10, description: '', scopeType: 'Stage', scopeId: null }; }
 }

@@ -12,40 +12,70 @@ export class AppComponent {
   appTitle = 'Modeler V3';
 
   navItems: NavItem[] = [
-    // 1) Process structure
-    { label: 'Processes', route: '/catalogs/processes', icon: '🧭' },
-    { label: 'SubProcesses', route: '/catalogs/sub-processes', icon: '🧩' },
-    { label: 'Stages', route: '/catalogs/stages', icon: '🧱' },
-
-    // 2) Domain model
-    { label: 'Artifacts', route: '/catalogs/artifacts', icon: '📦' },
-    { label: 'Facts', route: '/catalogs/facts', icon: '🧷' },
-    { label: 'States', route: '/catalogs/states', icon: '📍' },
-
-    // 3) Actors and executable catalog
-    { label: 'Actors', route: '/catalogs/actors', icon: '👤' },
-    { label: 'Actions', route: '/catalogs/actions', icon: '🛠️' },
-    { label: 'Conditions', route: '/catalogs/conditions', icon: '⛳' },
-
-    // 4) Workflow definition
-    { label: 'Kartabls', route: '/catalogs/kartabls', icon: '🗂️' },
-    { label: 'Scenarios', route: '/scenarios', icon: '🎬' },
-    { label: 'Decisions', route: '/decisions', icon: '🔘' },
-    { label: 'Routing Rules', route: '/kartabl-routing-rules', icon: '🔀' },
-    { label: 'State Transitions', route: '/state-transitions', icon: '🔁' },
-
-    // 5) Runtime
-    { label: 'WorkItems', route: '/work-items', icon: '🧾' },
-    { label: 'Kartabl Queue', route: '/kartabl-queue', icon: '📥' },
-    { label: 'Action Outbox', route: '/action-outbox', icon: '📤' },
-
-    // 6) Tools
-    { label: 'Runtime Setup', route: '/tools/runtime-setup', icon: '🚀' },
-    { label: 'Mermaid Export', route: '/tools/mermaid-export', icon: '🧜' },
-    { label: 'Validation', route: '/tools/validation', icon: '✅' },
-    { label: 'Import/Export', route: '/tools/io', icon: '📦' },
-
-    // 7) Help
-    { label: 'Help', route: '/help', icon: '❓' },
+    { label: 'Home', route: '/home', icon: '🏠' },
+    {
+      type: 'group',
+      label: 'Model Structure',
+      icon: '🧭',
+      children: [
+        { label: 'Processes', route: '/catalogs/processes', icon: '🧭' },
+        { label: 'SubProcesses', route: '/catalogs/sub-processes', icon: '🧩' },
+        { label: 'Stages', route: '/catalogs/stages', icon: '🧱' },
+        { label: 'Scenarios', route: '/scenarios', icon: '🎬' },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Entity Model',
+      icon: '📦',
+      children: [
+        { label: 'Artifacts', route: '/catalogs/artifacts', icon: '📦' },
+        { label: 'Facts', route: '/catalogs/facts', icon: '🧷' },
+        { label: 'Conditions', route: '/catalogs/conditions', icon: '⛳' },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Behavior',
+      icon: '⚙️',
+      children: [
+        { label: 'Actions', route: '/catalogs/actions', icon: '🛠️' },
+        { label: 'Decisions', route: '/decisions', icon: '🔘' },
+        { label: 'Flow Links', route: '/flow-links', icon: '🔗' },
+        { label: 'Level Flows', route: '/level-flows', icon: '🔌' },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Work Routing',
+      icon: '🗂️',
+      children: [
+        { label: 'Roles', route: '/catalogs/actors', icon: '👤' },
+        { label: 'Kartabls', route: '/catalogs/kartabls', icon: '🗂️' },
+        { label: 'Kartabl Routing Rules', route: '/kartabl-routing-rules', icon: '🔀' },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Runtime',
+      icon: '🚀',
+      children: [
+        { label: 'Runtime Setup', route: '/tools/runtime-setup', icon: '🚀' },
+        { label: 'WorkItems', route: '/work-items', icon: '🧾' },
+        { label: 'Kartabl Queue', route: '/kartabl-queue', icon: '📥' },
+        { label: 'Action Outbox', route: '/action-outbox', icon: '📤' },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Tools',
+      icon: '🧰',
+      children: [
+        { label: 'Mermaid Export', route: '/tools/mermaid-export', icon: '🧜' },
+        { label: 'Validation', route: '/tools/validation', icon: '✅' },
+        { label: 'Import/Export', route: '/tools/io', icon: '📦' },
+        { label: 'Help', route: '/help', icon: '❓' },
+      ],
+    },
   ];
 }

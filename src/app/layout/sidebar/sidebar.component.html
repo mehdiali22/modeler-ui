@@ -1,9 +1,27 @@
 <nav class="nav">
-  <a *ngFor="let item of items"
-     class="nav-item"
-     [routerLink]="item.route"
-     routerLinkActive="active">
-    <span class="nav-icon" *ngIf="item.icon">{{ item.icon }}</span>
-    <span class="nav-text">{{ item.label }}</span>
-  </a>
+  <ng-container *ngFor="let item of items">
+    <section *ngIf="isGroup(item); else singleLink" class="nav-group">
+      <div class="nav-group-title">
+        <span class="nav-group-icon" *ngIf="item.icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </div>
+
+      <a *ngFor="let child of item.children"
+         class="nav-item"
+         [routerLink]="child.route"
+         routerLinkActive="active">
+        <span class="nav-icon" *ngIf="child.icon">{{ child.icon }}</span>
+        <span class="nav-text">{{ child.label }}</span>
+      </a>
+    </section>
+
+    <ng-template #singleLink>
+      <a class="nav-item"
+         [routerLink]="item.route || '/'"
+         routerLinkActive="active">
+        <span class="nav-icon" *ngIf="item.icon">{{ item.icon }}</span>
+        <span class="nav-text">{{ item.label }}</span>
+      </a>
+    </ng-template>
+  </ng-container>
 </nav>

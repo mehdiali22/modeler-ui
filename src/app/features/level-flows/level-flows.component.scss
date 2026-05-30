@@ -1,10 +1,11 @@
 .page { padding: 16px; }
-.head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px; }
+.head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; }
 .title { font-size: 22px; font-weight: 700; }
-.muted { color: #666; font-size: 13px; margin-top: 4px; }
-.code-line { direction: ltr; display: inline-block; margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #f7f7f7; border: 1px solid #eee; border-radius: 8px; padding: 6px 8px; }
-.legacy-note { border: 1px solid #ffe0a3; background: #fff8e8; color: #6b4a00; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
-.grid { display: grid; grid-template-columns: minmax(380px, 1fr) minmax(320px, .8fr); gap: 12px; }
+.muted { color: #666; font-size: 13px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.tab { border: 1px solid #ddd; background: #fff; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.tab.active { background: #111; color: #fff; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 label { display:block; margin-top: 8px; font-size: 12px; color: #444; }
 input, select, textarea { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; padding: 8px; font-family: inherit; }
@@ -15,12 +16,6 @@ input, select, textarea { width: 100%; box-sizing: border-box; border: 1px solid
 .tbl { width: 100%; border-collapse: collapse; }
 .tbl th, .tbl td { border-bottom: 1px solid #eee; padding: 8px; text-align: right; vertical-align: top; }
 .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
-.small { font-size: 12px; max-width: 360px; overflow-wrap: anywhere; color: #555; margin-top: 4px; }
-.hint { font-size: 12px; color: #555; background: #f7f7f7; border-radius: 8px; padding: 6px 8px; margin-top: 4px; overflow-wrap: anywhere; }
-.flow-help p { color: #555; line-height: 1.8; }
-.flow-example { direction: ltr; display: flex; align-items: center; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
-.state, .action { border: 2px solid #aaa; border-radius: 10px; padding: 10px 14px; background: #fff; font-weight: 700; }
-.state { border-color: #2f6fdb; background: #eef5ff; }
-.action { border-color: #777; border-radius: 999px; }
-.arrow { font-size: 22px; color: #555; }
+.small { font-size: 12px; max-width: 320px; overflow-wrap: anywhere; }
+.badge { background: #f2f2f2; border-radius: 999px; padding: 2px 8px; }
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }

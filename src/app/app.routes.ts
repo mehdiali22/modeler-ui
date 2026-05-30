@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'kartabl-queue' },
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
 
   // Catalogs
   { path: 'catalogs/processes', loadComponent: () => import('./features/catalogs/processes/processes.component').then(m => m.ProcessesComponent) },
@@ -9,13 +10,13 @@ export const routes: Routes = [
   { path: 'catalogs/stages', loadComponent: () => import('./features/catalogs/stages/stages.component').then(m => m.StagesComponent) },
   { path: 'catalogs/artifacts', loadComponent: () => import('./features/catalogs/artifacts/artifacts.component').then(m => m.ArtifactsComponent) },
   { path: 'catalogs/facts', loadComponent: () => import('./features/catalogs/facts/facts.component').then(m => m.FactsComponent) },
-  { path: 'catalogs/states', loadComponent: () => import('./features/states/states.component').then(m => m.StatesComponent) },
   { path: 'catalogs/conditions', loadComponent: () => import('./features/catalogs/conditions/conditions.component').then(m => m.ConditionsComponent) },
   { path: 'catalogs/actions', loadComponent: () => import('./features/catalogs/actions/actions.component').then(m => m.ActionsComponent) },
   { path: 'catalogs/actors', loadComponent: () => import('./features/catalogs/actors/actors.component').then(m => m.ActorsComponent) },
   { path: 'catalogs/kartabls', loadComponent: () => import('./features/catalogs/kartabls/kartabls.component').then(m => m.KartablsComponent) },
   { path: 'kartabl-routing-rules', loadComponent: () => import('./features/kartabl-routing-rules/kartabl-routing-rules.component').then(m => m.KartablRoutingRulesComponent) },
-  { path: 'state-transitions', loadComponent: () => import('./features/level-flows/level-flows.component').then(m => m.LevelFlowsComponent) },
+  { path: 'flow-links', loadComponent: () => import('./features/flow-links/flow-links.component').then(m => m.FlowLinksComponent) },
+  { path: 'level-flows', loadComponent: () => import('./features/level-flows/level-flows.component').then(m => m.LevelFlowsComponent) },
 
   // Runtime
   { path: 'kartabl-queue', loadComponent: () => import('./features/kartabl-queue/kartabl-queue.component').then(m => m.KartablQueueComponent) },
@@ -35,5 +36,5 @@ export const routes: Routes = [
   // Misc
   { path: 'help', loadComponent: () => import('./features/help/help.component').then(m => m.HelpComponent) },
 
-  { path: '**', redirectTo: 'kartabl-queue' },
+  { path: '**', redirectTo: 'home' },
 ];

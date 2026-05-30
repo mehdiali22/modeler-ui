@@ -1,0 +1,1 @@
+$(sed 's/$//' /mnt/data/work_step9/src/app/features/tools/mermaid-export/mermaid-export.component.ts)

@@ -1,0 +1,39 @@
+<div class="home-page" dir="rtl">
+  <section class="hero-card">
+    <div class="hero-text">
+      <div class="eyebrow">Modeler V3</div>
+      <h1>صفحه اصلی مدل‌سازی</h1>
+      <p>
+        همه بخش‌های مدل در چند دسته اصلی مرتب شده‌اند. از هر باکس می‌توانی مستقیم وارد صفحه مربوطه شوی.
+      </p>
+    </div>
+
+    <div class="hero-actions">
+      <a class="hero-link primary" routerLink="/tools/mermaid-export">🧜 Mermaid Export</a>
+      <a class="hero-link" routerLink="/scenarios">🎬 Scenarios</a>
+    </div>
+  </section>
+
+  <section class="home-grid">
+    <article class="home-box" *ngFor="let group of groups">
+      <header class="box-head">
+        <div class="box-icon">{{ group.icon }}</div>
+        <div class="box-title-wrap">
+          <h2>{{ group.title }}</h2>
+          <p>{{ group.subtitle }}</p>
+        </div>
+      </header>
+
+      <div class="box-links">
+        <a class="box-link" *ngFor="let link of group.links" [routerLink]="link.route">
+          <span class="link-icon">{{ link.icon }}</span>
+          <span class="link-main">
+            <strong>{{ link.label }}</strong>
+            <small>{{ link.description }}</small>
+          </span>
+          <span class="link-arrow">←</span>
+        </a>
+      </div>
+    </article>
+  </section>
+</div>

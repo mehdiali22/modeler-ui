@@ -1,127 +1,92 @@
 <div class="page" dir="rtl">
   <div class="head">
     <div>
-      <div class="title">State Transitions</div>
-      <div class="muted">
-        این صفحه مسیر اصلی مدل را با وضعیت موجودیت، اکشن و وضعیت مقصد تعریف می‌کند.
-      </div>
-      <div class="code-line">EntityState → Action → EntityState</div>
+      <div class="title">Level Flow Ports/Links</div>
+      <div class="muted">هر سطح Port/Link خودش را دارد؛ Link فقط ارتباط/قرارداد همان سطح را نشان می‌دهد و تغییر واقعی ایجاد نمی‌کند.</div>
     </div>
-    <button class="btn" (click)="load()" [disabled]="isLoading">Reload</button>
+    <button class="btn" (click)="load()">Reload</button>
   </div>
 
-  <div class="legacy-note">
-    شرط‌های بیزینسی روی EntityState.ConditionJson هستند و مسیرها در ActionStateTransition ثبت می‌شوند.
+  <div class="tabs">
+    <button *ngFor="let l of levels" class="tab" [class.active]="active===l.key" (click)="setLevel(l.key)">{{ l.title }}</button>
   </div>
 
   <div class="alert" *ngIf="error">{{ error }}</div>
 
   <div class="grid">
     <div class="card">
-      <h3>Add State Transition</h3>
-
-      <label>Scenario</label>
-      <select [(ngModel)]="form.scenarioId" (ngModelChange)="onScenarioChanged()">
-        <option [ngValue]="null">بدون سناریو...</option>
-        <option *ngFor="let s of scenarios" [ngValue]="s.id">{{ s.scenarioKey }} - {{ s.titleFa || '' }}</option>
-      </select>
-
-      <label>From State</label>
-      <select [(ngModel)]="form.fromStateId">
-        <option [ngValue]="null">بدون وضعیت ورودی...</option>
-        <option *ngFor="let s of states" [ngValue]="s.id">{{ s.stateKey }} - {{ s.titleFa || '' }}</option>
-      </select>
-      <div class="hint" *ngIf="form.fromStateId">{{ stateConditions(form.fromStateId) }}</div>
-
-      <label>Action</label>
-      <select [(ngModel)]="form.actionId">
+      <h3>Add Port</h3>
+      <label>Owner</label>
+      <select [(ngModel)]="portForm.ownerId">
         <option [ngValue]="null">انتخاب...</option>
-        <option *ngFor="let a of actions" [ngValue]="a.id">{{ a.actionKey }} - {{ a.titleFa || '' }}</option>
+        <option *ngFor="let o of owners[active]" [ngValue]="o.id">{{ ownerLabel(o) }} - {{ o.titleFa || '' }}</option>
       </select>
-
-      <label>To State</label>
-      <select [(ngModel)]="form.toStateId">
-        <option [ngValue]="null">بدون وضعیت خروجی...</option>
-        <option *ngFor="let s of states" [ngValue]="s.id">{{ s.stateKey }} - {{ s.titleFa || '' }}</option>
-      </select>
-      <div class="hint" *ngIf="form.toStateId">{{ stateConditions(form.toStateId) }}</div>
-
-      <label>Decision</label>
-      <select [(ngModel)]="form.decisionId" (ngModelChange)="onDecisionChanged()">
-        <option [ngValue]="null">بدون Decision...</option>
-        <option *ngFor="let d of filteredDecisions()" [ngValue]="d.id">{{ d.decisionKey }} - {{ d.titleFa || '' }}</option>
-      </select>
-
-      <label>Decision Option</label>
-      <select [(ngModel)]="form.decisionOptionId">
-        <option [ngValue]="null">بدون Option...</option>
-        <option *ngFor="let o of filteredOptions()" [ngValue]="o.id">{{ o.optionKey }} - {{ o.titleFa || '' }}</option>
-      </select>
-
-      <label>LabelFa</label>
-      <input [(ngModel)]="form.labelFa" placeholder="اختیاری؛ مثلاً تایید" />
-
-      <label>SortOrder</label>
-      <input type="number" [(ngModel)]="form.sortOrder" />
-
-      <label>Description</label>
-      <textarea [(ngModel)]="form.description" rows="2"></textarea>
-
-      <button class="btn primary" (click)="add()">+ Add Transition</button>
+      <label>PortKey</label><input [(ngModel)]="portForm.portKey" placeholder="AdmReadyForDaramadOut" />
+      <label>TitleFa</label><input [(ngModel)]="portForm.titleFa" />
+      <label>Direction</label><select [(ngModel)]="portForm.direction"><option>In</option><option>Out</option></select>
+      <label>PayloadSchemaJson</label><textarea [(ngModel)]="portForm.payloadSchemaJson" rows="4"></textarea>
+      <label>SortOrder</label><input type="number" [(ngModel)]="portForm.sortOrder" />
+      <label>Description</label><textarea [(ngModel)]="portForm.description" rows="2"></textarea>
+      <button class="btn primary" (click)="addPort()">+ Add Port</button>
     </div>
 
-    <div class="card flow-help">
-      <h3>مدل جدید</h3>
-      <div class="flow-example">
-        <span class="state">State</span>
-        <span class="arrow">→</span>
-        <span class="action">Action</span>
-        <span class="arrow">→</span>
-        <span class="state">State</span>
-      </div>
-      <p>
-        هر State مشخص می‌کند موجودیت چه Factهایی دارد. هر Transition مشخص می‌کند کدام Action موجودیت را از یک State به State بعدی می‌برد.
-      </p>
-      <p>
-        برای انتخاب‌های کاربر، Decision و Option را روی همان Transition ثبت کن تا در Mermaid روی فلش تصمیم نمایش داده شود.
-      </p>
-      <div class="code-line">DaramadDecision →|Approve| ApproveAdmByDaramad</div>
+    <div class="card">
+      <h3>Add Link</h3>
+      <label>LinkKey</label><input [(ngModel)]="linkForm.linkKey" placeholder="A_To_B" />
+      <label>From Port</label>
+      <select [(ngModel)]="linkForm.fromPortId">
+        <option [ngValue]="null">انتخاب...</option>
+        <option *ngFor="let p of ports" [ngValue]="p.id">{{ portLabel(p) }}</option>
+      </select>
+      <label>To Port</label>
+      <select [(ngModel)]="linkForm.toPortId">
+        <option [ngValue]="null">انتخاب...</option>
+        <option *ngFor="let p of ports" [ngValue]="p.id">{{ portLabel(p) }}</option>
+      </select>
+      <ng-container *ngIf="active === 'action'">
+        <label>ScopeType</label><input [(ngModel)]="linkForm.scopeType" placeholder="Stage / Scenario / DecisionOption" />
+        <label>ScopeId</label><input type="number" [(ngModel)]="linkForm.scopeId" />
+      </ng-container>
+      <label>ConditionIdsJson</label><input [(ngModel)]="linkForm.conditionIdsJson" />
+      <label>LabelFa</label><input [(ngModel)]="linkForm.labelFa" />
+      <label>SortOrder</label><input type="number" [(ngModel)]="linkForm.sortOrder" />
+      <label>Description</label><textarea [(ngModel)]="linkForm.description" rows="2"></textarea>
+      <button class="btn primary" (click)="addLink()">+ Add Link</button>
     </div>
   </div>
 
   <div class="card">
-    <h3>Action State Transitions</h3>
+    <h3>Ports</h3>
     <table class="tbl">
-      <thead>
-        <tr>
-          <th>Order</th>
-          <th>Scenario</th>
-          <th>From State</th>
-          <th>Action</th>
-          <th>To State</th>
-          <th>Decision</th>
-          <th>Option</th>
-          <th>Label</th>
-          <th></th>
-        </tr>
-      </thead>
+      <thead><tr><th>Owner</th><th>Direction</th><th>PortKey</th><th>Title</th><th>Payload</th><th>Order</th><th></th></tr></thead>
       <tbody>
-        <tr *ngFor="let t of transitions">
-          <td>{{ t.sortOrder }}</td>
-          <td>{{ scenarioLabel(t.scenarioId) }}</td>
-          <td>
-            {{ stateLabel(t.fromStateId) }}
-            <div class="small mono">{{ stateConditions(t.fromStateId) }}</div>
-          </td>
-          <td>{{ actionLabel(t.actionId) }}</td>
-          <td>
-            {{ stateLabel(t.toStateId) }}
-            <div class="small mono">{{ stateConditions(t.toStateId) }}</div>
-          </td>
-          <td>{{ decisionLabel(t.decisionId) }}</td>
-          <td>{{ optionLabel(t.decisionOptionId) }}</td>
-          <td>{{ t.labelFa || '—' }}</td>
-          <td><button class="btn danger" (click)="delete(t.id)">Delete</button></td>
+        <tr *ngFor="let p of ports">
+          <td>{{ ownerNameById(p.processId || p.subProcessId || p.stageId || p.scenarioId || p.actionId) }}</td>
+          <td><span class="badge">{{ p.direction }}</span></td>
+          <td class="mono">{{ p.portKey }}</td>
+          <td>{{ p.titleFa || '—' }}</td>
+          <td class="mono small">{{ p.payloadSchemaJson || '—' }}</td>
+          <td>{{ p.sortOrder }}</td>
+          <td><button class="btn danger" (click)="deletePort(p.id)">Delete</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Links</h3>
+    <table class="tbl">
+      <thead><tr><th>Order</th><th>LinkKey</th><th>From</th><th>To</th><th>Label</th><th>Conditions</th><th>Scope</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of links">
+          <td>{{ l.sortOrder }}</td>
+          <td class="mono">{{ l.linkKey }}</td>
+          <td>{{ l.fromPortId }}</td>
+          <td>{{ l.toPortId }}</td>
+          <td>{{ l.labelFa || '—' }}</td>
+          <td class="mono small">{{ l.conditionIdsJson }}</td>
+          <td>{{ l.scopeType || '—' }} {{ l.scopeId || '' }}</td>
+          <td><button class="btn danger" (click)="deleteLink(l.id)">Delete</button></td>
         </tr>
       </tbody>
     </table>
