@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ActionDefinition, ActorDefinition, Artifact } from '../../../core/types';
 import { ActionApiService } from '../../../core/api/action-api.service';
 import { ArtifactApiService } from '../../../core/api/artifact-api.service';
@@ -27,16 +28,20 @@ export class ActionsComponent implements OnInit
   q = '';
   editingId: number | null = null;
   edit: any = null;
+  private pendingEditId: number | null = null;
 
   constructor(
     private actionsApi: ActionApiService,
     private artifactsApi: ArtifactApiService,
     private actorsApi: ActorApiService,
+    private route: ActivatedRoute,
   ) {}
 
 
   ngOnInit(): void
   {
+    const id = Number(this.route.snapshot.queryParamMap.get('id'));
+    this.pendingEditId = Number.isFinite(id) && id > 0 ? id : null;
     this.load();
   }
 
@@ -53,7 +58,13 @@ load()
       this.rows = res.actions ?? [];
       this.artifacts = res.artifacts ?? [];
       this.actors = res.actors ?? [];
-      this.rebuildOptions();},
+      this.rebuildOptions();
+      if (this.pendingEditId && this.rows.some(x => x.id === this.pendingEditId)) {
+        const id = this.pendingEditId;
+        this.pendingEditId = null;
+        this.editRow(id);
+      }
+    },
     error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); }
   });
 }
@@ -126,6 +137,7 @@ reload()
   editRow(id: number)
   {
     this.editingId = id;
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
     const src = this.rows.find(x => x.id === id);
     this.edit = src ? structuredClone(src as any) : null;
   }

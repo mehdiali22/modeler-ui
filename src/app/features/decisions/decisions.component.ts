@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { Scenario, Condition, ActionDefinition, Fact } from '../../core/types';
@@ -59,6 +60,9 @@ export class DecisionsComponent implements OnInit
   optionFactChanges: DecisionOptionFactChangeDto[] = [];
   optionFactChangesJson = '[]';
 
+  private pendingScenarioId: number | null = null;
+  private pendingDecisionId: number | null = null;
+
   constructor(
     private scenariosApi: ScenarioApiService,
     private conditionsApi: ConditionApiService,
@@ -68,10 +72,16 @@ export class DecisionsComponent implements OnInit
     private decisionsApi: ScenarioDecisionApiService,
     private optionsApi: ScenarioDecisionOptionApiService,
     private ofcApi: DecisionOptionFactChangeApiService,
+    private route: ActivatedRoute,
   ) { }
 
   ngOnInit(): void
   {
+    const qp = this.route.snapshot.queryParamMap;
+    const scenarioId = Number(qp.get('scenarioId'));
+    const decisionId = Number(qp.get('decisionId'));
+    this.pendingScenarioId = Number.isFinite(scenarioId) && scenarioId > 0 ? scenarioId : null;
+    this.pendingDecisionId = Number.isFinite(decisionId) && decisionId > 0 ? decisionId : null;
     this.loadCatalogs();
   }
 
@@ -117,7 +127,11 @@ export class DecisionsComponent implements OnInit
           sub: f.meaning ?? '',
         }));
 
-        if (this.selectedScenarioId == null && this.scenarios.length)
+        if (this.pendingScenarioId && this.scenarios.some(s => s.id === this.pendingScenarioId))
+        {
+          this.selectedScenarioId = this.pendingScenarioId;
+        }
+        else if (this.selectedScenarioId == null && this.scenarios.length)
         {
           this.selectedScenarioId = this.scenarios[0].id;
         }
@@ -163,6 +177,18 @@ export class DecisionsComponent implements OnInit
       {
         this.decisions = rows ?? [];
 
+        if (this.pendingDecisionId != null)
+        {
+          const target = this.decisions.find((x) => x.id === this.pendingDecisionId);
+          if (target)
+          {
+            const id = this.pendingDecisionId;
+            this.pendingDecisionId = null;
+            this.selectDecision(id);
+            return;
+          }
+        }
+
         if (this.selectedDecisionId != null)
         {
           const still = this.decisions.find((x) => x.id === this.selectedDecisionId);
@@ -204,6 +230,7 @@ export class DecisionsComponent implements OnInit
   selectDecision(id: number): void
   {
     this.selectedDecisionId = id;
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
 
     const d = this.decisions.find((x) => x.id === id);
     this.decisionEdit = d ? structuredClone(d) : null;

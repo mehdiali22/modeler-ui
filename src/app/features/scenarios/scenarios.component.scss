@@ -6,11 +6,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -18,19 +18,43 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1.6fr;
-  gap: 12px;
+.scenario-layout {
+  display: block;
+}
+
+.list-card {
+  width: 100%;
+}
+
+.editor-stack.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 22px;
+  overflow: auto;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(2px);
+}
+
+.modal-panel {
+  width: min(1320px, calc(100vw - 44px));
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-panel > .card {
+  position: static;
 }
 
 .card {
   background: #fff;
   border: 1px solid rgba(0,0,0,.08);
-  border-radius: 12px;
-  padding: 10px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
@@ -39,23 +63,71 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  background: rgba(0,0,0,.015);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.compact-form {
+  padding-bottom: 8px;
+}
+
+.row2,
+.location-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.location-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.info-box {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,.10);
+  border-radius: 10px;
+  background: rgba(0,0,0,.025);
 }
 
 .tbl {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
+  table-layout: fixed;
 }
 
-.tbl th, .tbl td {
+.tbl th,
+.tbl td {
   border-bottom: 1px solid rgba(0,0,0,.06);
-  padding: 8px;
+  padding: 9px 10px;
   text-align: right;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.tbl th {
+  background: rgba(0,0,0,.025);
+  font-weight: 900;
+}
+
+.tbl.mini {
+  table-layout: auto;
 }
 
 tr.active {
-  background: rgba(0,0,0,.03);
+  background: rgba(56, 88, 255, .06);
 }
 
 .btn {
@@ -64,6 +136,11 @@ tr.active {
   padding: 7px 10px;
   border-radius: 10px;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn.sm {
@@ -74,14 +151,17 @@ tr.active {
 .btn.primary {
   font-weight: 900;
   border-color: rgba(0,0,0,.25);
+  background: rgba(56, 88, 255, .08);
 }
 
 .btn.danger {
   border-color: rgba(180,0,0,.3);
+  color: #b00000;
 }
 
 .inp {
   width: 100%;
+  box-sizing: border-box;
   padding: 8px 10px;
   border: 1px solid rgba(0,0,0,.12);
   border-radius: 10px;
@@ -89,121 +169,134 @@ tr.active {
 }
 
 .mono {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.strong {
+  font-weight: 900;
 }
 
 .muted {
   opacity: .65;
 }
 
+.small {
+  font-size: 12px;
+}
+
 .center {
-  text-align: center;
+  text-align: center !important;
 }
 
 .right {
   white-space: nowrap;
-  text-align: left;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.row2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  align-items: start;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
+  text-align: left !important;
 }
 
 .lbl {
   font-weight: 900;
   margin-bottom: 6px;
-}
-
-.lbl.big {
-  font-size: 16px;
-}
-
-.hr {
-  border: none;
-  border-top: 1px solid rgba(0,0,0,.08);
-  margin: 8px 0;
-}
-
-.dec-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.decision {
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: 12px;
-  padding: 10px;
-  background: #fff;
-}
-
-.dec-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.act-block {
-  margin-top: 10px;
-}
-
-.act {
-  display: grid;
-  grid-template-columns: 1fr 2fr auto;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.hint {
   font-size: 12px;
-  margin-top: 6px;
-}
-/*--------------------new--------*/
-.inp {
-  width: 100%;
-  box-sizing: border-box;   // ✅ مهم
+  color: rgba(0,0,0,.68);
 }
 
-/* جلوگیری از overflow داخل grid */
-.row2 > * {
-  min-width: 0;             // ✅ مهم
+.alert {
+  background: #fff1f1;
+  color: #9b0000;
+  border: 1px solid #ffcaca;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
 }
 
-/* اطمینان از اینکه کامپوننت‌های سفارشی مثل input رفتار کنن */
+.empty-state {
+  padding: 30px 16px;
+  text-align: center;
+  color: rgba(0,0,0,.6);
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option-chip {
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 10px;
+  background: rgba(0,0,0,.018);
+  padding: 8px 10px;
+}
+
 app-smart-select,
 app-ref-multi-select {
   display: block;
   width: 100%;
 }
 
-/* responsive: وقتی فضا کم شد، دو ستون تبدیل به تک‌ستون بشه */
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: 1fr;   // لیست بالا، ادیتور پایین
-  }
+.row2 > *,
+.location-strip > * {
+  min-width: 0;
+}
 
-  .row2 {
-    grid-template-columns: 1fr;   // ✅ فیلدها زیر هم
+@media (max-width: 1200px) {
+  .location-strip {
+    grid-template-columns: 1fr;
   }
 }
 
-.section-title{font-weight:900;margin-top:10px}.mini td{vertical-align:top}
+@media (max-width: 760px) {
+  .head,
+  .card-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.link {
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.action-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .editor-stack.modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-panel {
+    width: 100%;
+  }
+}
+
+.first-row {
+  margin-bottom: 6px;
+}
+
+.stage-link-row {
+  margin-top: 6px;
+}
+
+.selected-name {
+  margin-top: 4px;
+  line-height: 1.5;
+}

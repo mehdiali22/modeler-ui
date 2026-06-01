@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Process, Stage, SubProcess } from '../../../core/types';
 import { StageApiService } from '../../../core/api/stage-api.service';
@@ -29,6 +30,7 @@ export class StagesComponent implements OnInit {
 
   editingId: number | null = null;
   error: string | null = null;
+  private pendingEditId: number | null = null;
 
   draft: StageDraft = this.newDraft();
 
@@ -36,9 +38,12 @@ export class StagesComponent implements OnInit {
     private stagesApi: StageApiService,
     private processesApi: ProcessApiService,
     private subProcessesApi: SubProcessApiService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    const id = Number(this.route.snapshot.queryParamMap.get('id'));
+    this.pendingEditId = Number.isFinite(id) && id > 0 ? id : null;
     this.load();
   }
 
@@ -54,6 +59,13 @@ export class StagesComponent implements OnInit {
         this.processes = res.processes ?? [];
         this.subProcesses = res.subProcesses ?? [];
         if (!this.draft.processId && this.processes.length) this.draft.processId = this.processes[0].id;
+        if (this.pendingEditId) {
+          const row = this.rows.find(x => x.id === this.pendingEditId);
+          if (row) {
+            this.pendingEditId = null;
+            this.edit(row);
+          }
+        }
       },
       error: err => { this.error = (err?.message ?? 'خطا در ارتباط با API'); },
     });
@@ -92,6 +104,7 @@ export class StagesComponent implements OnInit {
 
   edit(r: Stage): void {
     this.editingId = r.id;
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
     this.error = null;
     this.draft = {
       processId: r.processId,
