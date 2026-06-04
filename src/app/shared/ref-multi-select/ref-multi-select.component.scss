@@ -5,7 +5,7 @@
 }
 
 .lbl {
-  font-weight: 800;
+  font-weight: 400;
   opacity: .9;
 }
 
@@ -59,12 +59,12 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1;
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--app-font);
 }
 
 .disabled {

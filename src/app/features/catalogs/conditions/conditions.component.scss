@@ -20,12 +20,12 @@
 }
 
 .title {
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .sub {
   color: #6b7280;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .form {
@@ -78,7 +78,7 @@
 .error {
   grid-column: 1 / -1;
   color: #dc2626;
-  font-size: 12px;
+  font-size: 18px;
   margin-top: 4px;
 }
 
@@ -89,7 +89,7 @@
 .tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .tbl th, .tbl td {
@@ -101,7 +101,7 @@
 
 .tbl thead th {
   background: #fafafa;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .w-op {
@@ -154,8 +154,8 @@
 }
 
 .facts-title {
-  font-weight: 700;
-  font-size: 13px;
+  font-weight: 400;
+  font-size: 18px;
 }
 
 .inp.small {
@@ -184,12 +184,12 @@
 }
 
 .fact-key {
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .fact-meaning {
   color: #6b7280;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .empty-mini {

@@ -1,10 +1,10 @@
 .page { display: grid; gap: 16px; }
 .head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.title { font-size: 20px; font-weight: 800; }
+.title { font-size: 22px; font-weight: 400; }
 .card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:14px; overflow:auto; }
-.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl { width:100%; border-collapse:collapse; font-size: 18px; }
 th,td { border-bottom:1px solid #eef2f7; padding:8px; text-align:right; vertical-align:top; }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction:ltr; unicode-bidi:embed; }
+.mono { font-family: var(--app-font); direction:ltr; unicode-bidi:embed; }
 .muted { color:#64748b; }
 .center { text-align:center; }
 .btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:8px 12px; cursor:pointer; }

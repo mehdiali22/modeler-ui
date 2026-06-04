@@ -10,8 +10,8 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .tools {
@@ -35,7 +35,7 @@
 }
 
 .card-title {
-  font-weight: 900;
+  font-weight: 400;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -45,7 +45,7 @@
 .tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .tbl th, .tbl td {
@@ -68,11 +68,11 @@ tr.active {
 
 .btn.sm {
   padding: 5px 8px;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .btn.primary {
-  font-weight: 900;
+  font-weight: 400;
   border-color: rgba(0,0,0,.25);
 }
 
@@ -89,7 +89,7 @@ tr.active {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--app-font);
 }
 
 .muted {
@@ -126,12 +126,12 @@ tr.active {
 }
 
 .lbl {
-  font-weight: 900;
+  font-weight: 400;
   margin-bottom: 6px;
 }
 
 .lbl.big {
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .hr {
@@ -174,7 +174,7 @@ tr.active {
 }
 
 .hint {
-  font-size: 12px;
+  font-size: 18px;
   margin-top: 6px;
 }
 /*--------------------new--------*/

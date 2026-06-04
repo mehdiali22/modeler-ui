@@ -11,8 +11,8 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .tools {
@@ -37,11 +37,11 @@
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid rgba(0,0,0,.08);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .small {
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .muted {
@@ -53,7 +53,7 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--app-font);
 }
 
 .inp {
@@ -96,7 +96,7 @@
   justify-content: center;
   border-radius: 12px;
   background: rgba(0,0,0,.04);
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .meta {
@@ -105,7 +105,7 @@
 }
 
 .lbl {
-  font-weight: 700;
+  font-weight: 400;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -113,7 +113,7 @@
 }
 
 .route {
-  font-size: 12px;
+  font-size: 18px;
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(0,0,0,.05);
@@ -132,7 +132,7 @@
 }
 
 .tag {
-  font-size: 11px;
+  font-size: 18px;
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(0,0,0,.05);
@@ -140,7 +140,7 @@
 
 .go {
   opacity: .65;
-  font-size: 18px;
+  font-size: 20px;
   padding-top: 6px;
 }
 
@@ -171,7 +171,7 @@
   border-radius: 999px;
   background: rgba(0,0,0,.05);
   color: inherit;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .jump-btn:hover {
@@ -209,7 +209,7 @@
   justify-content: center;
   border-radius: 12px;
   background: rgba(0,0,0,.04);
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .c-title {

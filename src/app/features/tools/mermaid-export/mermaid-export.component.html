@@ -3,7 +3,7 @@
     <div>
       <div class="title">Mermaid Export</div>
       <div class="hint">
-خروجی Mermaid برای ساختار مدل و مسیردهی کارتابل ساخته می‌شود. فیلترها کمک می‌کنند نمودار یک Process مشخص را ببینی.
+خروجی Mermaid برای رفتار سناریو، ساختار مدل و مسیردهی کارتابل ساخته می‌شود. فیلترها کمک می‌کنند Process، SubProcess، Stage، Scenario یا Action مشخص را ببینی.
       </div>
     </div>
 
@@ -13,6 +13,7 @@
         [value]="mode"
         (change)="onModeChange($any($event.target).value)"
       >
+        <option value="state-action-activity">رفتار سناریو / Action Decision</option>
         <option value="structure">ساختار Process/SubProcess/Stage</option>
         <option value="routing">مسیردهی کارتابل</option>
         <option value="full">ساختار + مسیردهی</option>

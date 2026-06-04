@@ -33,8 +33,7 @@
         <tbody>
           <tr *ngFor="let r of filtered" [class.active]="r.id===editingId">
             <td>
-              <div class="mono strong">{{ r.scenarioKey }}</div>
-              <div class="muted small">{{ r.titleFa || '—' }}</div>
+              <div class="strong">{{ scenarioTitle(r) }}</div>
             </td>
             <td class="mono small">{{ scenarioProcessTitle(r) }}</td>
             <td class="mono small">{{ scenarioSubProcessTitle(r) }}</td>
@@ -55,8 +54,8 @@
       </table>
     </div>
 
-    <div class="editor-stack modal-backdrop" *ngIf="edit">
-      <div class="modal-panel">
+    <div class="editor-stack modal-backdrop" *ngIf="edit" (click)="closeEditor()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
       <div class="card">
         <div class="card-title">
           <span>Scenario Editor</span>
@@ -145,27 +144,74 @@
           <button class="btn sm" (click)="addActionRef()">+ Add Action</button>
         </div>
         <div class="form">
-          <div class="muted small">اکشن‌های این سناریو اینجا مشخص می‌شوند. مسیر State-based آن‌ها در صفحه State Transitions مدل می‌شود.</div>
+          <div class="muted small">اکشن‌های این سناریو از خود Scenario، مسیرهای State Transition و گزینه‌های Decision جمع‌آوری می‌شوند.</div>
           <table class="tbl mini">
-            <thead><tr><th>#</th><th>Action</th><th>ParamsJson</th><th>Details</th><th></th></tr></thead>
+            <thead><tr><th>#</th><th>Action</th><th>Source</th><th>Details</th></tr></thead>
             <tbody>
-              <tr *ngFor="let a of edit.actions; let i = index">
+              <tr *ngFor="let actionId of scenarioActionIds(edit.id, edit); let i = index">
                 <td class="mono">{{ i + 1 }}</td>
                 <td>
-                  <select class="inp" [value]="a.actionId" (change)="a.actionId = +$any($event.target).value">
-                    <option *ngFor="let act of actionOptions" [value]="act.id">{{ act.text }}{{ act.sub ? ' — ' + act.sub : '' }}</option>
-                  </select>
-                  <div class="muted small selected-name">{{ actionTitle(a.actionId) }}</div>
+                  <a class="link mono strong" [routerLink]="['/catalogs/actions']" [queryParams]="actionDetailParams(actionId)" target="_blank" rel="noopener">
+                    {{ actionTitle(actionId) }}
+                  </a>
                 </td>
-                <td><input class="inp mono" [value]="a.paramsJson || ''" (input)="a.paramsJson = $any($event.target).value" placeholder="{}"></td>
+                <td class="muted small mono">{{ scenarioActionSources(edit.id, actionId) }}</td>
                 <td>
-                  <a class="btn sm" [routerLink]="['/catalogs/actions']" [queryParams]="actionDetailParams(a.actionId)" target="_blank" rel="noopener">Open</a>
+                  <a class="btn sm" [routerLink]="['/catalogs/actions']" [queryParams]="actionDetailParams(actionId)" target="_blank" rel="noopener">Open</a>
                 </td>
-                <td><button class="btn sm danger" (click)="removeActionRef(i)">Remove</button></td>
               </tr>
-              <tr *ngIf="!(edit.actions || []).length"><td colspan="5" class="muted center">Action ندارد.</td></tr>
+              <tr *ngIf="!scenarioActionIds(edit.id, edit).length"><td colspan="4" class="muted center">Action ندارد.</td></tr>
             </tbody>
           </table>
+
+          <div class="card sub">
+            <div class="card-title">Explicit Scenario Action Refs</div>
+            <div class="form">
+              <div class="muted small">اگر لازم باشد اکشنی مستقیماً به خود Scenario وصل شود، اینجا اضافه می‌شود. مسیر اصلی بهتر است در State Transitions تعریف شود.</div>
+              <table class="tbl mini">
+                <thead><tr><th>#</th><th>Action</th><th>ParamsJson</th><th>Details</th><th></th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let a of edit.actions; let i = index">
+                    <td class="mono">{{ i + 1 }}</td>
+                    <td>
+                      <select class="inp" [value]="a.actionId" (change)="a.actionId = +$any($event.target).value">
+                        <option *ngFor="let act of actionOptions" [value]="act.id">{{ act.text }}{{ act.sub ? ' — ' + act.sub : '' }}</option>
+                      </select>
+                      <div class="muted small selected-name">{{ actionTitle(a.actionId) }}</div>
+                    </td>
+                    <td><input class="inp mono" [value]="a.paramsJson || ''" (input)="a.paramsJson = $any($event.target).value" placeholder="{}"></td>
+                    <td><a class="btn sm" [routerLink]="['/catalogs/actions']" [queryParams]="actionDetailParams(a.actionId)" target="_blank" rel="noopener">Open</a></td>
+                    <td><button class="btn sm danger" (click)="removeActionRef(i)">Remove</button></td>
+                  </tr>
+                  <tr *ngIf="!(edit.actions || []).length"><td colspan="5" class="muted center">Explicit Action ندارد.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Scenario Graph</span>
+          <span class="muted small">نمای ساده مسیرهای همین سناریو</span>
+        </div>
+        <div class="form">
+          <div class="muted small">
+            این گراف از State Transitionهای سناریو ساخته می‌شود.
+            مسیر اصلی: <span class="mono">State → Action → State</span>
+          </div>
+
+          <div class="scenario-mermaid-viewer" *ngIf="hasScenarioGraph(edit.id); else noScenarioGraph">
+            <iframe
+              class="scenario-mermaid-frame"
+              sandbox="allow-scripts allow-same-origin"
+              [src]="scenarioMermaidFrameUrl(edit.id)">
+            </iframe>
+          </div>
+          <ng-template #noScenarioGraph>
+            <div class="empty-state">برای این سناریو State Transition ثبت نشده است.</div>
+          </ng-template>
         </div>
       </div>
 
@@ -182,10 +228,9 @@
               <ng-container *ngFor="let d of scenarioDecisions(edit.id)">
                 <tr>
                   <td>
-                    <a class="link mono strong" [routerLink]="['/decisions']" [queryParams]="decisionDetailParams(d.id)" target="_blank" rel="noopener">
-                      {{ d.decisionKey }}
+                    <a class="link strong" [routerLink]="['/decisions']" [queryParams]="decisionDetailParams(d.id)" target="_blank" rel="noopener">
+                      {{ decisionTitle(d.id) }}
                     </a>
-                    <div class="muted small">{{ d.titleFa || '—' }}</div>
                   </td>
                   <td class="mono small">{{ d.uiActionKey || '—' }}</td>
                   <td>

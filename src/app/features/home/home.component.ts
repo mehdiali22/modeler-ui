@@ -53,8 +53,6 @@ export class HomeComponent {
       links: [
         { label: 'Actions', route: '/catalogs/actions', icon: '🛠️', description: 'اکشن‌های کاربر یا سیستم' },
         { label: 'Decisions', route: '/decisions', icon: '🔘', description: 'نقطه تصمیم و گزینه‌ها' },
-        { label: 'Flow Links', route: '/flow-links', icon: '🔗', description: 'ارتباط‌های نمایشی مدل' },
-        { label: 'Level Flows', route: '/level-flows', icon: '🔌', description: 'Flow سطحی برای نمایش مدل' },
       ],
     },
     {

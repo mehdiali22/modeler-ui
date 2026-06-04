@@ -149,6 +149,29 @@ export type ScenarioDecisionOption = {
   actionIdsJson?: string;
 };
 
+
+export type EntityState = {
+  id: Id;
+  artifactId: Id;
+  stateKey: string;
+  titleFa?: string | null;
+  conditionJson?: string | null;
+  description?: string | null;
+};
+
+export type ActionStateTransition = {
+  id: Id;
+  scenarioId?: Id | null;
+  actionId: Id;
+  fromStateId?: Id | null;
+  toStateId?: Id | null;
+  decisionId?: Id | null;
+  decisionOptionId?: Id | null;
+  labelFa?: string | null;
+  sortOrder: number;
+  description?: string | null;
+};
+
 export type Scenario = {
   id: Id;
   scenarioKey: string;

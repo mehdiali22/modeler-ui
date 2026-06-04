@@ -41,8 +41,6 @@ export class AppComponent {
       children: [
         { label: 'Actions', route: '/catalogs/actions', icon: '🛠️' },
         { label: 'Decisions', route: '/decisions', icon: '🔘' },
-        { label: 'Flow Links', route: '/flow-links', icon: '🔗' },
-        { label: 'Level Flows', route: '/level-flows', icon: '🔌' },
       ],
     },
     {

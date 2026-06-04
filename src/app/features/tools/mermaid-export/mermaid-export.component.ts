@@ -10,6 +10,8 @@ import { KartablRoutingRuleApiService } from '../../../core/api/kartabl-routing-
 import { ScenarioApiService } from '../../../core/api/scenario-api.service';
 import { ScenarioDecisionApiService } from '../../../core/api/scenario-decision-api.service';
 import { ScenarioDecisionOptionApiService } from '../../../core/api/scenario-decision-option-api.service';
+import { ActionStateTransitionApiService } from '../../../core/api/action-state-transition-api.service';
+import { EntityStateApiService } from '../../../core/api/entity-state-api.service';
 import { ActionApiService } from '../../../core/api/action-api.service';
 import {
   LevelFlowApiService,
@@ -19,6 +21,8 @@ import { ToastService } from '../../../core/toast.service';
 import {
   ActionDefinition,
   ActionFlowLink,
+  ActionStateTransition,
+  EntityState,
   Kartabl,
   KartablRoutingRule,
   LevelFlowLink,
@@ -31,7 +35,7 @@ import {
   SubProcess,
 } from '../../../core/types';
 
-type MermaidMode = 'structure' | 'routing' | 'full';
+type MermaidMode = 'state-action-activity' | 'structure' | 'routing' | 'full';
 
 type LevelFlowData = {
   ports: LevelFlowPort[];
@@ -48,6 +52,8 @@ type ModelData = {
   options: ScenarioDecisionOption[];
   rules: KartablRoutingRule[];
   actions: ActionDefinition[];
+  actionStateTransitions: ActionStateTransition[];
+  entityStates: EntityState[];
   levelFlows: Record<FlowLevel, LevelFlowData>;
 };
 
@@ -69,6 +75,8 @@ export class MermaidExportComponent {
     options: [],
     rules: [],
     actions: [],
+    actionStateTransitions: [],
+    entityStates: [],
     levelFlows: {
       process: { ports: [], links: [] },
       'sub-process': { ports: [], links: [] },
@@ -84,7 +92,7 @@ export class MermaidExportComponent {
   selectedScenarioId: number | '' = '';
   selectedActionId: number | '' = '';
 
-  mode: MermaidMode = 'structure';
+  mode: MermaidMode = 'state-action-activity';
   mermaid = '';
   isLoading = false;
   error: string | null = null;
@@ -97,6 +105,8 @@ export class MermaidExportComponent {
     private scenariosApi: ScenarioApiService,
     private scenarioDecisionsApi: ScenarioDecisionApiService,
     private scenarioDecisionOptionsApi: ScenarioDecisionOptionApiService,
+    private actionStateTransitionsApi: ActionStateTransitionApiService,
+    private entityStatesApi: EntityStateApiService,
     private routingRulesApi: KartablRoutingRuleApiService,
     private actionsApi: ActionApiService,
     private levelFlowApi: LevelFlowApiService,
@@ -117,6 +127,8 @@ export class MermaidExportComponent {
       scenarios: this.scenariosApi.list(),
       decisions: this.scenarioDecisionsApi.list(),
       options: this.scenarioDecisionOptionsApi.list(),
+      actionStateTransitions: this.actionStateTransitionsApi.list(),
+      entityStates: this.entityStatesApi.list(),
       rules: this.routingRulesApi.list(),
       actions: this.actionsApi.list(),
       processPorts: this.levelFlowApi.listPorts('process'),
@@ -139,6 +151,8 @@ export class MermaidExportComponent {
           scenarios: this.sortByTitle(data.scenarios),
           decisions: this.sortByTitle(data.decisions),
           options: this.sortByTitle(data.options),
+          actionStateTransitions: [...data.actionStateTransitions].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id),
+          entityStates: this.sortByTitle(data.entityStates),
           rules: [...data.rules].sort(
             (a, b) =>
               (a.priority ?? 0) - (b.priority ?? 0) ||
@@ -185,6 +199,11 @@ export class MermaidExportComponent {
   }
 
   generate(): void {
+    if (this.mode === 'state-action-activity') {
+      this.mermaid = this.buildScenarioBehaviorMermaid();
+      return;
+    }
+
     const processId =
       this.selectedProcessId === ''
         ? undefined
@@ -245,7 +264,7 @@ export class MermaidExportComponent {
   }
 
   onModeChange(value: string): void {
-    this.mode = (value as MermaidMode) || 'structure';
+    this.mode = (value as MermaidMode) || 'state-action-activity';
     this.normalizeFilters();
     this.generate();
   }
@@ -264,7 +283,7 @@ export class MermaidExportComponent {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'modeler-level-flow.mmd';
+    a.download = 'modeler-mermaid-export.mmd';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -392,19 +411,182 @@ export class MermaidExportComponent {
   }
 
   get showSubProcessFilter(): boolean {
-    return false;
+    return this.mode === 'state-action-activity';
   }
 
   get showStageFilter(): boolean {
-    return false;
+    return this.mode === 'state-action-activity';
   }
 
   get showScenarioFilter(): boolean {
-    return false;
+    return this.mode === 'state-action-activity';
   }
 
   get showActionFilter(): boolean {
-    return false;
+    return this.mode === 'state-action-activity';
+  }
+
+  private buildScenarioBehaviorMermaid(): string {
+    const lines: string[] = [
+      'flowchart TB',
+      '  %% Generated by Modeler State-based Activity Export',
+      '  classDef scenarioNode fill:#EEF2FF,stroke:#4F46E5,stroke-width:2px;',
+      '  classDef stateNode fill:#E8F1FF,stroke:#2F6FDB,stroke-width:2px;',
+      '  classDef actionNode fill:#FFFFFF,stroke:#555,stroke-width:1px;',
+      '  classDef decisionNode fill:#FFF7E6,stroke:#D48806,stroke-width:2px;',
+      '  classDef optionNode fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px;',
+    ];
+
+    const emitted = new Set<string>();
+    const emit = (line: string) => {
+      if (emitted.has(line)) return;
+      emitted.add(line);
+      lines.push(line);
+    };
+
+    const scenarios = this.filteredScenarios.filter((scenario) => {
+      if (this.selectedScenarioId !== '') {
+        return scenario.id === Number(this.selectedScenarioId);
+      }
+      return true;
+    });
+
+    for (const scenario of scenarios) {
+      const scenarioLabel = this.typedLabel('Scenario', scenario.scenarioKey, scenario.titleFa);
+      emit(`  subgraph SG_${scenario.id}["${this.escape(scenarioLabel)}"]`);
+      emit('    direction TB');
+
+      const scenarioTransitions = this.data.actionStateTransitions
+        .filter((t) => t.scenarioId === scenario.id)
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);
+
+      const decisions = this.data.decisions.filter((d) => d.scenarioId === scenario.id);
+      const decisionIds = new Set(decisions.map((d) => d.id));
+
+      // 1) Draw ordinary flow segments, including the action before a decision.
+      // A transition with decisionId and without decisionOptionId is the point that reaches the decision state.
+      for (const t of scenarioTransitions.filter((x) => x.decisionOptionId == null)) {
+        if (this.selectedActionId !== '' && t.actionId !== Number(this.selectedActionId)) continue;
+
+        const actionNode = this.actionNodeId(t.actionId);
+        if (t.fromStateId) {
+          const fromStateNode = this.stateNodeId(t.fromStateId);
+          this.emitStateNode(emit, t.fromStateId);
+          emit(`    ${fromStateNode} --> ${actionNode}`);
+        }
+
+        emit(`    ${actionNode}(["${this.escape(this.actionLabelById(t.actionId))}"]):::actionNode`);
+
+        if (t.toStateId) {
+          const toStateNode = this.stateNodeId(t.toStateId);
+          this.emitStateNode(emit, t.toStateId);
+          emit(`    ${actionNode} --> ${toStateNode}`);
+
+          if (t.decisionId && decisionIds.has(t.decisionId)) {
+            const decisionNode = this.decisionNodeId(t.decisionId);
+            this.emitDecisionNode(emit, t.decisionId);
+            emit(`    ${toStateNode} --> ${decisionNode}`);
+          }
+        }
+      }
+
+      // 2) Draw decisions and option branches. Option transitions must start from the decision node,
+      // not directly from the previous state; otherwise the graph shows two parallel meanings.
+      for (const decision of decisions) {
+        const decisionNode = this.decisionNodeId(decision.id);
+        this.emitDecisionNode(emit, decision.id);
+
+        const options = this.data.options.filter((o) => o.scenarioDecisionId === decision.id);
+        for (const option of options) {
+          const optionLabel = this.escapeEdgeLabel(`${option.optionKey}${option.titleFa ? ' / ' + option.titleFa : ''}`);
+          const optionTransitions = scenarioTransitions.filter((t) => t.decisionOptionId === option.id);
+
+          if (optionTransitions.length > 0) {
+            for (const t of optionTransitions) {
+              if (this.selectedActionId !== '' && t.actionId !== Number(this.selectedActionId)) continue;
+
+              const actionNode = this.actionNodeId(t.actionId);
+              emit(`    ${actionNode}(["${this.escape(this.actionLabelById(t.actionId))}"]):::actionNode`);
+              emit(`    ${decisionNode} -->|"${optionLabel}"| ${actionNode}`);
+
+              if (t.toStateId) {
+                const toStateNode = this.stateNodeId(t.toStateId);
+                this.emitStateNode(emit, t.toStateId);
+                emit(`    ${actionNode} --> ${toStateNode}`);
+              }
+            }
+            continue;
+          }
+
+          // Fallback for old data that only stores option actionIdsJson.
+          const actionIds = this.parseIdsJson(option.actionIdsJson);
+          if (actionIds.length === 0) {
+            const optionNode = `OPT_${option.id}`;
+            emit(`    ${decisionNode} -->|"${optionLabel}"| ${optionNode}["${this.escape(option.optionKey)}"]:::optionNode`);
+            continue;
+          }
+
+          for (const actionId of actionIds) {
+            if (this.selectedActionId !== '' && actionId !== Number(this.selectedActionId)) continue;
+            const actionNode = this.actionNodeId(actionId);
+            emit(`    ${actionNode}(["${this.escape(this.actionLabelById(actionId))}"]):::actionNode`);
+            emit(`    ${decisionNode} -->|"${optionLabel}"| ${actionNode}`);
+          }
+        }
+      }
+
+      // 3) Fallback for legacy scenario action refs that have no state transitions.
+      const transitionedActionIds = new Set(scenarioTransitions.map((t) => t.actionId));
+      const directActionIds = (scenario.actions ?? [])
+        .map((a) => Number(a.actionId))
+        .filter((id) => Number.isFinite(id) && id > 0 && !transitionedActionIds.has(id));
+      for (const actionId of directActionIds) {
+        if (this.selectedActionId !== '' && actionId !== Number(this.selectedActionId)) continue;
+        const actionNode = this.actionNodeId(actionId);
+        emit(`    ${actionNode}(["${this.escape(this.actionLabelById(actionId))}"]):::actionNode`);
+      }
+
+      emit('  end');
+    }
+
+    if (lines.length <= 9) {
+      lines.push('  Empty["برای فیلتر انتخاب‌شده Scenario/Action/Decision پیدا نشد"]');
+    }
+
+    return lines.join('\n');
+  }
+
+  private stateNodeId(stateId: number): string {
+    return `STATE_${stateId}`;
+  }
+
+  private decisionNodeId(decisionId: number): string {
+    return `DEC_${decisionId}`;
+  }
+
+  private emitStateNode(emit: (line: string) => void, stateId: number): void {
+    const state = this.data.entityStates.find((x) => x.id === stateId);
+    const label = state
+      ? this.typedLabel('State', state.stateKey, state.titleFa)
+      : this.typedLabel('State', `#${stateId}`);
+    emit(`    ${this.stateNodeId(stateId)}["${this.escape(label)}"]:::stateNode`);
+  }
+
+  private emitDecisionNode(emit: (line: string) => void, decisionId: number): void {
+    const decision = this.data.decisions.find((x) => x.id === decisionId);
+    const label = decision
+      ? this.typedLabel('Decision', decision.decisionKey, decision.titleFa)
+      : this.typedLabel('Decision', `#${decisionId}`);
+    emit(`    ${this.decisionNodeId(decisionId)}{"${this.escape(label)}"}:::decisionNode`);
+  }
+
+  private actionNodeId(actionId: number): string {
+    return `ACT_${actionId}`;
+  }
+
+  private actionLabelById(actionId: number): string {
+    const action = this.data.actions.find((a) => a.id === actionId);
+    return this.typedLabel('Action', action?.actionKey ?? `#${actionId}`, action?.titleFa);
   }
 
   private buildActionLevelMermaid(): string {
@@ -852,6 +1034,10 @@ export class MermaidExportComponent {
 
   private typedLabel(type: string, key: string, title?: string | null): string {
     return [type, key, title].filter(Boolean).join('<br/>');
+  }
+
+  private escapeEdgeLabel(value: string | null | undefined): string {
+    return this.escape(value);
   }
 
   private escape(value: string | null | undefined): string {

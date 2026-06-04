@@ -21,8 +21,8 @@
   gap: 8px;
   padding: 4px 8px 7px;
   color: #6b7280;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 400;
   letter-spacing: .2px;
   border-bottom: 1px solid #eef0f5;
   margin-bottom: 2px;
@@ -53,7 +53,7 @@
 .nav-item.active {
   background: #e9eefc;
   color: #273a8a;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .nav-icon {
@@ -63,7 +63,7 @@
 }
 
 .nav-text {
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;

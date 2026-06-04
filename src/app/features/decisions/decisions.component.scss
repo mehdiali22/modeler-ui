@@ -11,8 +11,8 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .tools {
@@ -44,7 +44,7 @@
 .card-title {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(0,0,0,.08);
-  font-weight: 700;
+  font-weight: 400;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -65,7 +65,7 @@
 }
 
 .lbl {
-  font-size: 12px;
+  font-size: 18px;
   opacity: .8;
   margin-bottom: 4px;
 }
@@ -79,7 +79,7 @@
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--app-font);
 }
 
 .btn {
@@ -97,7 +97,7 @@
 
 .btn.primary {
   border-color: rgba(0,0,0,.2);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .btn.danger {

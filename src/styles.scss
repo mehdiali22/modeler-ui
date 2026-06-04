@@ -1,10 +1,396 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400&display=swap');
+
+:root {
+  --app-font: "Vazirmatn", Tahoma, Arial, sans-serif;
+  --app-mono-font: "Vazirmatn", Tahoma, Arial, sans-serif;
+  --app-base-font-size: 18px;
+}
+
 html, body {
   height: 100%;
   margin: 0;
-  
+  font-family: var(--app-font);
+  font-size: var(--app-base-font-size) !important;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+table,
+label,
+a,
+div,
+span,
+p {
+  font-family: var(--app-font);
+}
+
+button,
+input,
+select,
+textarea,
+table {
+  font-size: 1rem !important;
+}
+
+.tbl,
+.tbl th,
+.tbl td,
+.card,
+.form,
+.lbl,
+.muted,
+.small {
+  font-size: 1rem;
+}
+
+.title {
+  font-size: 1.55rem !important;
+}
+
+.card-title {
+  font-size: 1.12rem !important;
+}
+
+.lbl,
+label,
+.muted,
+.small {
+  font-size: 1rem !important;
+}
+
+code,
+pre,
+.mono,
+.output,
+textarea.output {
+  font-family: var(--app-font);
 }
 
 app-root {
   display: block;
   height: 100%;
+}
+
+/* Final typography override -------------------------------------------------
+   Component-level styles had many 13px/14px and heavy font-weight rules.
+   Keep the UI readable by forcing the shared typography at the end of the
+   global stylesheet. */
+html,
+body {
+  font-family: var(--app-font);
+  font-size: 17px !important;
+  font-weight: 400 !important;
+}
+
+body,
+body * {
+  font-family: var(--app-font);
+  font-weight: 400 !important;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+table,
+th,
+td,
+label,
+a,
+div,
+span,
+p,
+li {
+  font-size: 17px !important;
+}
+
+.title,
+.page-title,
+h1 {
+  font-size: 24px !important;
+  font-weight: 400 !important;
+}
+
+.card-title,
+h2,
+h3 {
+  font-size: 20px !important;
+  font-weight: 400 !important;
+}
+
+.lbl,
+label,
+.muted,
+.small,
+.hint,
+.nav-text,
+.tbl th,
+.tbl td {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.btn,
+button,
+input,
+select,
+textarea {
+  font-size: 17px !important;
+  font-weight: 400 !important;
+}
+
+code,
+pre,
+.mono,
+.output,
+textarea.output,
+[class*="code"] {
+  font-family: var(--app-font);
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+/* Typography final fix ------------------------------------------------------
+   Make the whole UI visibly larger and keep text weight normal. Component
+   styles sometimes set 13px/14px and heavy weights, so these overrides are
+   intentionally broad and come at the very end of styles.scss. */
+:root {
+  --app-font: "Vazirmatn", Tahoma, Arial, sans-serif;
+  --app-base-font-size: 18px;
+}
+
+html,
+body,
+app-root {
+  font-family: var(--app-font);
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 1.8 !important;
+}
+
+body,
+body * {
+  font-family: var(--app-font);
+  font-weight: 400 !important;
+}
+
+body,
+button,
+input,
+select,
+textarea,
+table,
+th,
+td,
+label,
+a,
+div,
+span,
+p,
+li,
+small,
+strong,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.title,
+.page-title,
+h1 {
+  font-size: 26px !important;
+  font-weight: 400 !important;
+}
+
+.card-title,
+h2,
+h3 {
+  font-size: 22px !important;
+  font-weight: 400 !important;
+}
+
+.lbl,
+label,
+.muted,
+.small,
+.hint,
+.nav-text,
+.tbl th,
+.tbl td,
+small {
+  font-size: 17px !important;
+  font-weight: 400 !important;
+}
+
+.btn,
+button,
+input,
+select,
+textarea {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+}
+
+.mono,
+code,
+pre,
+.output,
+textarea.output,
+[class*="code"] {
+  font-family: var(--app-font);
+  font-size: 17px !important;
+  font-weight: 400 !important;
+}
+
+
+/* Absolute final font override ------------------------------------------------
+   No component, link, table, button, code block or modal should fall back to
+   browser/default fonts. Keep every UI text on Vazirmatn and normal weight. */
+:root {
+  --app-font: "Vazirmatn", Tahoma, Arial, sans-serif !important;
+  --app-mono-font: "Vazirmatn", Tahoma, Arial, sans-serif !important;
+  --app-base-font-size: 18px !important;
+}
+
+html,
+body,
+app-root,
+body *,
+body *::before,
+body *::after,
+svg text,
+svg tspan {
+  font-family: var(--app-font);
+  font-weight: 400 !important;
+}
+
+html,
+body,
+app-root,
+body,
+body *,
+button,
+input,
+select,
+textarea,
+table,
+th,
+td,
+label,
+a,
+div,
+span,
+p,
+li,
+small,
+strong,
+code,
+pre,
+.mono,
+.output,
+textarea.output {
+  font-size: 18px !important;
+}
+
+.lbl,
+label,
+.muted,
+.small,
+.hint,
+.nav-text,
+.tbl th,
+.tbl td,
+small {
+  font-size: 17px !important;
+}
+
+.title,
+.page-title,
+h1 {
+  font-size: 26px !important;
+}
+
+.card-title,
+h2,
+h3 {
+  font-size: 22px !important;
+}
+
+
+/* Final absolute typography pass: component styles are not allowed to shrink or
+   change the font-family. */
+*,
+*::before,
+*::after,
+html,
+body,
+app-root,
+button,
+input,
+select,
+textarea,
+table,
+th,
+td,
+label,
+a,
+a *,
+div,
+div *,
+span,
+p,
+li,
+small,
+strong,
+code,
+pre,
+.mono,
+.output,
+textarea.output,
+svg,
+svg *,
+svg text,
+svg tspan {
+  font-family: "Vazirmatn", Tahoma, Arial, sans-serif !important;
+  font-weight: 400 !important;
+}
+
+html,
+body,
+app-root,
+button,
+input,
+select,
+textarea,
+table,
+th,
+td,
+label,
+a,
+a *,
+div,
+div *,
+span,
+p,
+li,
+small,
+strong,
+code,
+pre,
+.mono,
+.output,
+textarea.output {
+  font-size: 18px !important;
 }
